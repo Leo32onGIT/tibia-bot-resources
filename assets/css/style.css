@@ -54,6 +54,7 @@ html {
   transition: all 0.2s ease-in;
 }
 
+.navbar-item > img { max-height: 4rem; }
 
 .navbar-item:hover {
   background-color: transparent !important;
