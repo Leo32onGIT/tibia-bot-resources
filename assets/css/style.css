@@ -4,6 +4,12 @@
   font-family: "Poppins", sans-serif;
 }
 
+* {
+  background: #000 !important;
+  color: #0f0 !important;
+  outline: solid #f00 1px !important;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -23,7 +29,7 @@ html {
   height: 50px;
   text-align: center;
   border-radius: 4px;
-  position: relative;
+  position: fixed;
   bottom: 30px;
   right: 30px;
   transition: background-color 0.3s, opacity 0.5s, visibility 0.5s;
@@ -72,7 +78,7 @@ html {
 
 .navbar.is-fixed-bottom, .navbar.is-fixed-top {
     left: 0;
-    position: relative;
+    position: fixed;
     right: 0;
     z-index: 30;
 }
