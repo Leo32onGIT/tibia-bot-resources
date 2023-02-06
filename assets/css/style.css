@@ -46,10 +46,6 @@ html {
   visibility: visible;
 }
 
-.navbar-item {
-  box-sizing: border-box;
-}
-
 .navbar-item,
 .navbar-link {
   -moz-transition: all 0.2s ease-in;
@@ -72,6 +68,13 @@ html {
 
 .navbar-menu {
   animation: navAnimOpen 0.2s ease-in-out;
+}
+
+.navbar.is-fixed-bottom, .navbar.is-fixed-top {
+    left: 0;
+    position: absolute;
+    right: 0;
+    z-index: 30;
 }
 
 @keyframes navAnimOpen {
