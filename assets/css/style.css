@@ -52,6 +52,7 @@ html {
   -o-transition: all 0.2s ease-in;
   -webkit-transition: all 0.2s ease-in;
   transition: all 0.2s ease-in;
+  height: 4rem;
 }
 
 .navbar-item:hover {
