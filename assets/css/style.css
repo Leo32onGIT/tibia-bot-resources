@@ -46,6 +46,10 @@ html {
   visibility: visible;
 }
 
+.navbar-brand {
+  box-sizing: border-box;
+}
+
 .navbar-item,
 .navbar-link {
   -moz-transition: all 0.2s ease-in;
