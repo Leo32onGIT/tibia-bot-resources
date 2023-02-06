@@ -8,10 +8,6 @@ html {
   scroll-behavior: smooth;
 }
 
-html, body {
-  width: 100vw;
-}
-
 .blurple {
   color: #7289da;
 }
@@ -20,6 +16,9 @@ html, body {
   background-color: #1a2634 !important;
 }
 
+#test {
+  overflow-x: hidden;
+}
 #backtotop {
   display: inline-block;
   background-color: #7289da;
