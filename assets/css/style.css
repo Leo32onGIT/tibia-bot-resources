@@ -79,7 +79,7 @@ html {
 .navbar.is-fixed-bottom, .navbar.is-fixed-top {
     left: 0;
     position: fixed;
-    right: 88px;
+    right: 0;
     z-index: 30;
 }
 
