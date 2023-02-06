@@ -46,11 +46,6 @@ html {
   visibility: visible;
 }
 
-#header-logo{
-  width: 64px;
-  height: 64px
-}
-
 .navbar-item,
 .navbar-link {
   -moz-transition: all 0.2s ease-in;
@@ -58,6 +53,8 @@ html {
   -webkit-transition: all 0.2s ease-in;
   transition: all 0.2s ease-in;
 }
+
+.navbar-item > img { max-height: 4rem; }
 
 .navbar-item:hover {
   background-color: transparent !important;
