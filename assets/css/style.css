@@ -46,13 +46,17 @@ html {
   visibility: visible;
 }
 
+#header-logo{
+  width: 64px;
+  height: 64px
+}
+
 .navbar-item,
 .navbar-link {
   -moz-transition: all 0.2s ease-in;
   -o-transition: all 0.2s ease-in;
   -webkit-transition: all 0.2s ease-in;
   transition: all 0.2s ease-in;
-  height: 4rem;
 }
 
 .navbar-item:hover {
