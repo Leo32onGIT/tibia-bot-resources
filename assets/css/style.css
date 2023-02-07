@@ -249,6 +249,10 @@ nav.nav-w {
   width: 100%;
 }
 
+.footer {
+    padding: 2rem 1.5rem 2rem;
+}
+
 @media (max-width: 767px) {
   .shape-left {
     display: none;
