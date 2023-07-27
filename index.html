@@ -73,7 +73,7 @@
           <a href="#features" class="navbar-item is-tab">
             Features
           </a>
-          
+
           <a href="#support" class="navbar-item is-tab">
             Support
           </a>
@@ -534,15 +534,12 @@
     <!-- Stripe Buy Button container -->
     <div class="buy-button-container">
       <!-- Stripe JavaScript library -->
-      <script async
-        src="https://js.stripe.com/v3/buy-button.js">
-      </script>
+      <script async src="https://js.stripe.com/v3/buy-button.js"></script>
 
       <stripe-buy-button
         buy-button-id="buy_btn_1NYP91AelgLPl4M0CyDeAl2K"
         publishable-key="pk_live_51NYOd9AelgLPl4M0pwmJJSWmbXliUDGYDMnz9cFXHowSRxouhs193EHsOVB7Qd1HiCKkI6tLlgU3xdMM1AMeFmAD00k6viMNcW"
-      >
-      </stripe-buy-button>
+      ></stripe-buy-button>
     </div>
 
     <script>
@@ -558,19 +555,20 @@
         const topThreshold = 100; // In pixels, the button will disappear when scrolled 100 pixels from the top
 
         // Toggle the opacity of the container based on the scroll position
-        if (scrollDistance > topThreshold) {
-          buyButtonContainer.style.opacity = '0';
-        } else {
-          buyButtonContainer.style.opacity = '1';
-        }
+        buyButtonContainer.style.opacity = scrollDistance > topThreshold ? '0' : '1';
       }
 
-      // Attach the event listener to the 'scroll' event
-      window.addEventListener('scroll', handleScroll);
+      // Attach the event listener to the 'scroll' event with a small delay to improve performance
+      let scrollTimeout;
+      window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(handleScroll, 200); // Adjust the delay as needed
+      });
 
       // Initial check on page load (in case the user loads the page already scrolled)
       handleScroll();
     </script>
+
 
     <!-- Footer Section End -->
 
