@@ -606,13 +606,13 @@
         // Set the threshold from the top (adjust as needed)
         const topThreshold = 100; // In pixels, the button will disappear when scrolled 100 pixels from the top
 
-        // Toggle the opacity and disabled attribute of the container and the button based on the scroll position
+        // Toggle the opacity and pointer-events attribute of the container and the button based on the scroll position
         if (scrollDistance > topThreshold) {
           buyButtonContainer.style.opacity = '0';
-          stripeBuyButton.setAttribute('disabled', 'true');
+          stripeBuyButton.style.pointerEvents = 'none'; // Disable pointer events
         } else {
           buyButtonContainer.style.opacity = '1';
-          stripeBuyButton.removeAttribute('disabled');
+          stripeBuyButton.style.pointerEvents = 'auto'; // Enable pointer events
         }
       }
 
@@ -626,8 +626,6 @@
       // Initial check on page load (in case the user loads the page already scrolled)
       handleScroll();
     </script>
-
-
 
     <!-- Footer Section End -->
 
