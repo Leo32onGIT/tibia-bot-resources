@@ -43,7 +43,7 @@
       aria-label="main navigation"
     >
       <div class="navbar-brand mt-2 mb-2">
-        <a class="navbar-item ml-2" href="#">
+        <a class="navbar-item ml-2" href="https://patreon.com/violentbot">
           <img
             src="assets/img/beams.gif"
             width="64"
@@ -96,8 +96,8 @@
           </a>
           -->
 
-          <a href="https://patreon.com/violentbot" class="navbar-item is-tab mr-4" target="_blank">
-            <i class="fa-brands fa-patreon"></i>
+          <a href="https://buy.stripe.com/8wMdUuaop6GjfSw9AB" class="navbar-item is-tab mr-4" target="_blank">
+            <i class="fa fa-donate" alt="Donate"></i>
           </a>
 
           <!--
@@ -556,85 +556,14 @@
           <a href="https://www.tibia.com/" class="blurple">Tibia</a> is made by CipSoft, all Tibia content is copyrighted by <a href="https://cipsoft.com" class="blurple">CipSoft GmbH</a>.
           <br><br>
             <span class="has-text-weight-bold">
-                <a href="https://patreon.com/violentbot" target="_blank">
-                  Violent Bot
-                </a>
-                </span>
-            <br />
+              Violent Bot
+            </span>
+          <br />
             &copy; <span id="cp-year"></span> All Rights Reserved.<br>
-            Created by <a href="https://www.tibia.com/community/?subtopic=characters&name=Violent+Beams" class="blurple">Violent Beams</a>
+            <a href="https://patreon.com/violentbot" class="blurple">Created by Violent Beams</a>
         </div>
       </div>
     </footer>
-
-    <style>
-      /* Style for the positioning container */
-      .buy-button-container {
-        position: fixed;
-        bottom: 20px; /* Adjust this value to control the distance from the bottom */
-        right: 20px; /* Adjust this value to control the distance from the right */
-        opacity: 1; /* Initially show the container */
-        transition: opacity 0.3s ease-in-out; /* Add a smooth transition effect */
-      }
-
-      /* Centering styles for mobile devices (adjust breakpoint as needed) */
-      @media (max-width: 768px) {
-        .buy-button-container {
-          right: 50%; /* Set to 50% to center the button horizontally */
-          transform: translateX(50%); /* Shift the button to the left by 50% of its own width */
-        }
-      }
-    </style>
-
-    <!-- Stripe Buy Button container -->
-    <div class="buy-button-container">
-      <!-- Stripe JavaScript library -->
-      <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-
-      <!-- Wrap the stripe-buy-button in a div and set pointer-events on it -->
-      <div id="stripeBuyButtonWrapper" style="pointer-events: auto;">
-        <stripe-buy-button
-          id="stripeBuyButton"
-          buy-button-id="buy_btn_1NYP91AelgLPl4M0CyDeAl2K"
-          publishable-key="pk_live_51NYOd9AelgLPl4M0pwmJJSWmbXliUDGYDMnz9cFXHowSRxouhs193EHsOVB7Qd1HiCKkI6tLlgU3xdMM1AMeFmAD00k6viMNcW"
-        ></stripe-buy-button>
-      </div>
-    </div>
-
-    <script>
-      // Get the Stripe Buy Button container and the button element wrapper
-      const buyButtonContainer = document.querySelector('.buy-button-container');
-      const stripeBuyButtonWrapper = document.getElementById('stripeBuyButtonWrapper');
-
-      // Function to handle scroll event and toggle the visibility of the button
-      function handleScroll() {
-        // Get the distance scrolled from the top of the page
-        const scrollDistance = window.scrollY;
-
-        // Set the threshold from the top (adjust as needed)
-        const topThreshold = 100; // In pixels, the button will disappear when scrolled 100 pixels from the top
-
-        // Toggle the opacity and pointer-events attribute of the container and the button wrapper based on the scroll position
-        if (scrollDistance > topThreshold) {
-          buyButtonContainer.style.opacity = '0';
-          stripeBuyButtonWrapper.style.pointerEvents = 'none'; // Disable pointer events on the wrapper
-        } else {
-          buyButtonContainer.style.opacity = '1';
-          stripeBuyButtonWrapper.style.pointerEvents = 'auto'; // Enable pointer events on the wrapper
-        }
-      }
-
-      // Attach the event listener to the 'scroll' event with a small delay to improve performance
-      let scrollTimeout;
-      window.addEventListener('scroll', () => {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(handleScroll, 200); // Adjust the delay as needed
-      });
-
-      // Initial check on page load (in case the user loads the page already scrolled)
-      handleScroll();
-    </script>
-
 
     <!-- Footer Section End -->
 
