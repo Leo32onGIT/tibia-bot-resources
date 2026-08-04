@@ -1,572 +1,368 @@
-<!--
-  | Website designed by JstnLT (https://jstnlt.my.id)
-  | This project is open source: https://github.com/JastinXyz/discord-bot-landing-page-web
--->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Violent Bot - a Discord Bot for Tibia</title>
+<meta name="description" content="A Discord bot for the MMORPG Tibia. Online lists, death and level feeds, guild activity and automatic enemy detection.">
+<meta content="Violent Bot" property="og:title">
+<meta content="A Discord bot for the online MMORPG Tibia" property="og:description">
+<meta content="https://violentbot.xyz" property="og:url">
+<meta content="https://violentbot.xyz/assets/img/avatar.png" property="og:image">
+<meta content="48" property="og:image:width">
+<meta content="48" property="og:image:height">
+<meta content="#5b8cff" data-react-helmet="true" name="theme-color">
+<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  /* Palette and component language are shared with the bot's own monitoring
+     dashboard (tibia-bot/src/main/resources/web/dashboard.html) so the two
+     read as one product. Keep these tokens in sync with it. */
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151c;
+    --panel-border: #1f2430;
+    --text: #d7dce3;
+    --text-strong: #e8ebf0;
+    --muted: #7c8698;
+    --accent: #5b8cff;
+    --good: #3ecf8e;
+    --warn: #e0a93e;
+    --bad: #e0563e;
+    --purple: #a78bfa;
+    /* Not dashboard tokens — the dashboard's five accents were all taken by
+       other channels, so #spawns and #notifications get sibling hues rather
+       than repeats. */
+    --pink: #e879b9;
+    --cyan: #22d3ee;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; line-height: 1.65;
+    /* faint grid, like a console backdrop */
+    background-image:
+      linear-gradient(rgba(255,255,255,0.014) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
+    background-size: 46px 46px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 22px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .mono { font-family: var(--mono); }
+  code { font-family: var(--mono); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-size: 0.86em; color: var(--text-strong); }
 
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Violent Bot - a Discord Bot for Tibia</title>
-    <meta content="Violent Bot" property="og:title" />
-    <meta content="A Discord bot for the online MMORPG Tibia" property="og:description" />
-    <meta content="https://violentbot.xyz" property="og:url" />
-    <meta content="https://violentbot.xyz/assets/img/avatar.png" property="og:image" />
-    <meta content="#5750A0" data-react-helmet="true" name="theme-color" />
-    <meta content="48" property ="og:image:width" />
-    <meta content="48" property ="og:image:height" />
+  /* ---- Top bar ---- */
+  header { border-bottom: 1px solid var(--panel-border); position: sticky; top: 0; z-index: 20;
+           background: rgba(11,13,18,0.9); backdrop-filter: blur(8px); }
+  header .wrap { display: flex; align-items: center; gap: 14px; height: 52px; }
+  .brand { font-family: var(--mono); font-size: 13px; color: var(--text-strong); font-weight: 600; letter-spacing: -0.01em; }
+  .brand .slash { color: var(--muted); font-weight: 400; }
+  .brand:hover { text-decoration: none; }
+  .caret { display: inline-block; width: 7px; height: 14px; background: var(--accent); vertical-align: -2px; margin-left: 3px;
+           animation: blink 1.1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+  header .spacer { flex: 1; }
+  header a.icon { color: var(--muted); font-size: 16px; }
+  header a.icon:hover { color: var(--text-strong); }
 
-    <link rel="stylesheet" href="assets/css/bulma.min.css" />
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/tippy.js@6/animations/scale.css"
-    />
+  /* ---- Hero ---- */
+  .hero { padding: 76px 0 46px; text-align: center; }
+  .prompt-line { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .prompt-line .sigil { color: var(--good); }
+  .prompt-line .cmd { color: var(--text-strong); }
+  .hero h1 {
+    font-size: clamp(30px, 6vw, 42px); line-height: 1.12; letter-spacing: -0.03em;
+    margin: 0 0 16px; color: var(--text-strong); font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .hero h1 img { width: 64px; height: 64px; border-radius: 14px; flex-shrink: 0; }
+  .hero p { color: var(--muted); margin: 0 auto 14px; max-width: 56ch; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; justify-content: center; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 8px; padding: 9px 15px;
+         font-size: 13px; font-weight: 600; border: 1px solid var(--panel-border); }
+  .btn:hover { text-decoration: none; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #0b0d12; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { background: #2b3242; color: var(--text-strong); }
+  .btn-ghost:hover { background: #343d51; }
 
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
-      integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
+  /* ---- Section rule ---- */
+  .rule {
+    display: flex; align-items: center; gap: 12px; margin: 66px 0 26px;
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted);
+    scroll-margin-top: 68px;
+  }
+  .rule::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); }
+  .rule .hash { color: var(--accent); }
 
-    <script src="assets/js/jquery-3.6.0.js"></script>
-  </head>
-  <body>
-    <div id="test">
-    <!-- Back To Top Start -->
-    <a id="backtotop" data-tippy-content="Back To Top.">
-      <i class="fa-solid fa-angle-up has-text-white fa-2xl mt-5"></i>
-    </a>
-    <!-- Back To Top End -->
+  /* ---- Features: collapsible #channel rows ---- */
+  .chan { border: 1px solid var(--panel-border); border-radius: 9px; background: var(--panel); overflow: hidden; margin-bottom: 10px; }
+  .chan-head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; cursor: pointer;
+               width: 100%; background: none; border: 0; text-align: left; color: inherit; font: inherit; }
+  .chan-head:hover { background: rgba(255,255,255,0.02); }
+  /* The channel name carries its own colour coding — the tinted-chip treatment
+     the dashboard uses for .tag, applied to the name rather than sat beside it. */
+  .cname {
+    font-family: var(--mono); font-size: 13.5px; font-weight: 600;
+    display: inline-flex; align-items: baseline;
+    padding: 3px 9px; border-radius: 5px; flex-shrink: 0;
+  }
+  .cname .hashmark { opacity: 0.55; margin-right: 1px; }
+  .cname.blue { background: rgba(91,140,255,0.15); color: var(--accent); }
+  .cname.green { background: rgba(62,207,142,0.15); color: var(--good); }
+  .cname.red { background: rgba(224,86,62,0.15); color: var(--bad); }
+  .cname.amber { background: rgba(224,169,62,0.15); color: var(--warn); }
+  .cname.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .cname.pink { background: rgba(232,121,185,0.15); color: var(--pink); }
+  .cname.cyan { background: rgba(34,211,238,0.15); color: var(--cyan); }
+  .chan-head .blurb { color: var(--muted); font-size: 12.5px; margin-left: auto; text-align: right; }
+  .chan-head .chev { color: var(--muted); font-size: 13px; transition: transform 0.15s ease; }
+  .chan.open .chev { transform: rotate(180deg); }
+  .chan-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--panel-border); }
+  .chan.open .chan-body { display: block; }
+  .chan-body p { color: var(--muted); font-size: 13px; margin: 13px 0; }
+  .chan-body img { width: 100%; border-radius: 7px; border: 1px solid var(--panel-border); display: block; margin-top: 4px; }
 
-    <!-- Navbar Start -->
-    <nav
-      class="navbar is-fixed-top"
-      role="navigation"
-      aria-label="main navigation"
-    >
-      <div class="navbar-brand mt-2 mb-2">
-        <a class="navbar-item ml-2" href="https://patreon.com/violentbot">
-          <img
-            src="assets/img/beams.gif"
-            width="64"
-            height="64"
-          />
-        </a>
+  /* ---- Commands: a console block ---- */
+  .console { border: 1px solid var(--panel-border); border-radius: 9px; background: var(--panel); overflow: hidden; }
+  .console-bar { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-bottom: 1px solid var(--panel-border);
+                 font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .console-bar span.d { width: 8px; height: 8px; border-radius: 50%; background: var(--panel-border); }
+  .console-body { padding: 6px 0; }
+  .cline { display: grid; grid-template-columns: minmax(0,190px) 1fr; gap: 14px; padding: 7px 14px; font-size: 12.5px; align-items: baseline; }
+  .cline:hover { background: rgba(255,255,255,0.02); }
+  .cline .c { font-family: var(--mono); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cline .c .arg { color: var(--muted); }
+  .cline .d2 { color: var(--muted); line-height: 1.55; }
 
-        <a
-          role="button"
-          class="navbar-burger has-text-white"
-          data-target="navMenu"
-          aria-label="menu"
-          aria-expanded="false"
-        >
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
+  /* ---- Prose blocks ---- */
+  .block { border: 1px solid var(--panel-border); border-radius: 9px; background: var(--panel); padding: 18px; }
+  .block + .block { margin-top: 10px; }
+  .block h4 { margin: 0 0 3px; font-size: 12.5px; color: var(--text-strong); font-family: var(--mono); }
+  .block p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  .block p:last-child { margin-bottom: 0; }
 
-      <div id="navbarBasicExample" class="navbar-menu">
-        <div class="navbar-start">
-          <a href="#" class="navbar-item is-tab">
-            Home
-          </a>
+  .support { text-align: center; }
+  .support p { color: var(--muted); }
 
-          <a href="#features" class="navbar-item is-tab">
-            Features
-          </a>
+  footer { margin-top: 70px; border-top: 1px solid var(--panel-border); padding: 26px 0 40px;
+           color: var(--muted); font-size: 12px; text-align: center; line-height: 1.9; }
+  footer img { width: 100px; opacity: 0.5; display: block; margin: 0 auto 10px; }
 
-          <a href="#support" class="navbar-item is-tab">
-            Support
-          </a>
+  @media (max-width: 620px) {
+    .chan-head { flex-wrap: wrap; }
+    .chan-head .blurb { margin-left: 0; width: 100%; text-align: left; }
+    .cline { grid-template-columns: 1fr; gap: 3px; }
+    .hero { padding: 52px 0 34px; }
+    .hero h1 { gap: 12px; }
+    .hero h1 img { width: 48px; height: 48px; border-radius: 11px; }
+    .rule { margin: 50px 0 22px; }
+  }
+</style>
+</head>
+<body>
 
-          <!--
-          <a href="#stats" class="navbar-item is-tab">
-            Stats
-          </a>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#top">violentbot<span class="slash">.xyz</span></a>
+    <span class="spacer"></span>
+    <a class="icon" href="#features" title="Features" aria-label="Features"><i class="ti ti-layout-list" aria-hidden="true"></i></a>
+    <a class="icon" href="#commands" title="Commands" aria-label="Commands"><i class="ti ti-terminal-2" aria-hidden="true"></i></a>
+    <a class="icon" href="https://github.com/Leo32onGIT/tibia-bot" title="GitHub" aria-label="GitHub"><i class="ti ti-brand-github" aria-hidden="true"></i></a>
+    <a class="icon" href="https://discord.gg/SWMq9Pz8ud" title="Discord" aria-label="Community Discord"><i class="ti ti-brand-discord" aria-hidden="true"></i></a>
+    <a class="icon" href="https://patreon.com/violentbot" title="Patreon" aria-label="Patreon"><i class="ti ti-brand-patreon" aria-hidden="true"></i></a>
+  </div>
+</header>
 
-          <a href="#" class="navbar-item is-tab">
-            Docs
-          </a>
-          -->
-        </div>
-
-        <div class="navbar-end">
-          <!--
-          <a href="https://discord.gg/SWMq9Pz8ud" class="navbar-item is-tab mr-4" target="_blank">
-            <i class="fa-brands fa-discord"></i>
-          </a>
-          -->
-
-          <a href="https://github.com/Leo32onGIT/tibia-bot" class="navbar-item is-tab mr-4" target="_blank">
-            <i class="fa-brands fa-github" alt="View on GitHub"></i>
-          </a>
-
-          <!--
-          <a href="#" class="navbar-item is-tab" target="_blank">
-            <i class="fa-brands fa-github"></i>
-          </a> -->
-
-          <!-- <div class="navbar-item">
-            <div class="buttons">
-              <a href="#" class="button is-blurple">
-                <strong
-                  ><i class="fa-solid fa-right-to-bracket mr-2"></i>
-                  Login</strong
-                >
-              </a>
-            </div>
-          </div> -->
-        </div>
-      </div>
-    </nav>
-    <!-- Navbar End -->
-
-    <!-- Hero Section Start -->
-    <section class="hero bg-base is-fullheight">
-      <div class="hero-body is-align-self-center">
-        <div class="">
-          <div class="columns">
-            <div class="column mr-6 mt-12" data-aos="fade-up">
-              <p class="title has-text-white has-text-weight-bold">
-                Violent Bot
-              </p>
-              <p class="subtitle has-text-grey-light is-size-6 mt-3">
-                This is a discord bot for the <a href="https://www.tibia.com/news/?subtopic=latestnews">MMORPG Tibia</a>.<br>
-                The code is open-source and is free to compile and run yourself.<br>
-                <br>
-                Join Patreon as a <b>paid supporter</b> and I will send you an invite link for the bot I am hosting.
-              </p>
-              <div class="buttons">
-                <a href="https://github.com/Leo32onGIT/tibia-bot" class="button is-info">
-                  <strong>View Code on GitHub</strong>
-                </a>
-                <a href="https://www.patreon.com/violentbot/membership" class="button is-primary is-outlined">
-                  <strong><i class="fa-solid fa-crown"></i> Join Patreon</strong>
-                </a>
-              </div>
-            </div>
-            <div class="column mt-6" data-aos="fade-left">
-              <a href="https://discord.gg/SWMq9Pz8ud">
-              <img
-                class="image has-image-centered vert-move mt-4"
-                src="assets/img/avatar.png"
-                alt="Violent Bot"
-                style="width: 20rem;"
-              />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="has-text-centered" data-tippy-content="Scroll Down">
-        <a href="#features"
-          ><i
-            class="fa-solid fa-circle-chevron-down fa-lg vert-move2 has-text-white"
-          ></i
-        ></a>
-      </div>
-    </section>
-    <!-- Hero Section End -->
-
-    <!-- Hero Waves Start -->
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-      <path
-        fill="#1a2634"
-        fill-opacity="1"
-        d="M0,288L24,261.3C48,235,96,181,144,154.7C192,128,240,128,288,149.3C336,171,384,213,432,202.7C480,192,528,128,576,133.3C624,139,672,213,720,213.3C768,213,816,139,864,101.3C912,64,960,64,1008,106.7C1056,149,1104,235,1152,240C1200,245,1248,171,1296,144C1344,117,1392,139,1416,149.3L1440,160L1440,0L1416,0C1392,0,1344,0,1296,0C1248,0,1200,0,1152,0C1104,0,1056,0,1008,0C960,0,912,0,864,0C816,0,768,0,720,0C672,0,624,0,576,0C528,0,480,0,432,0C384,0,336,0,288,0C240,0,192,0,144,0C96,0,48,0,24,0L0,0Z"
-      ></path>
-    </svg>
-    <!-- Hero Waves End -->
-
-    <!-- Features Section Start -->
-    <section id="features" class="section mt-6">
-
-      <!--
-      <div class="has-text-centered">
-        <h1 class="title lined">Features</h1>
-        <div class="line line-center blurple"></div>
-      </div>
-      -->
-
-      <!-- single feature start (Left) -->
-      <div class="single-feature">
-        <div class="shape-right" data-aos="fade-up-left">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="#9AAAE3"
-              d="M42.7,-62.9C50.9,-52.8,50.1,-34.4,51.7,-19.2C53.4,-4,57.4,8,56.6,20.8C55.8,33.7,50.1,47.4,39.9,53.8C29.6,60.1,14.8,59.1,0.4,58.5C-14,58,-28,57.9,-38,51.5C-48.1,45,-54.3,32.3,-61.3,18.1C-68.4,4,-76.4,-11.7,-71.9,-22.7C-67.4,-33.6,-50.4,-39.8,-36.3,-47.9C-22.2,-56.1,-11.1,-66.3,3.1,-70.5C17.2,-74.7,34.5,-72.9,42.7,-62.9Z"
-              transform="translate(100 100)"
-            />
-          </svg>
-        </div>
-
-        <div class="columns mt-6">
-          <div class="column mr-6">
-            <h4 class="title"><span class="blurple">Online List</span></h4>
-            <p class="subtitle mt-3">
-              The online list has two options:<br>
-              <br>
-              <code>combined</code> if you just want one <span class="has-text-grey">online</span> channel<br>
-              <code>separate</code> if you prefer dedicated channels for <span class="has-text-success">allies</span>, <span class="has-text-danger">enemies</span> and <span class="has-text-grey-light">neutrals</span>.
-            </p>
-              <p class="subtitle mt-3">
-                The channel name shows an online counter and updates every 6~ minutes.
-              </p>
-          </div>
-          <div class="column" data-aos="fade-left">
-            <img
-              class="image has-image-centered"
-              src="assets/img/onlinelist.png"
-              alt="online list"
-            />
-          </div>
-        </div>
-      </div>
-      <!-- single feature end (Left) -->
-
-      <!-- single feature start (Right) -->
-      <div class="single-feature">
-        <div class="shape-right" data-aos="fade-up-left">
-          <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="#9AAAE3"
-              d="M42.7,-62.9C50.9,-52.8,50.1,-34.4,51.7,-19.2C53.4,-4,57.4,8,56.6,20.8C55.8,33.7,50.1,47.4,39.9,53.8C29.6,60.1,14.8,59.1,0.4,58.5C-14,58,-28,57.9,-38,51.5C-48.1,45,-54.3,32.3,-61.3,18.1C-68.4,4,-76.4,-11.7,-71.9,-22.7C-67.4,-33.6,-50.4,-39.8,-36.3,-47.9C-22.2,-56.1,-11.1,-66.3,3.1,-70.5C17.2,-74.7,34.5,-72.9,42.7,-62.9Z"
-              transform="translate(100 100)"
-            />
-          </svg>
-        </div>
-
-        <div class="columns mt-6">
-          <div class="column mr-6">
-            <h4 class="title">
-              <span class="has-text-primary">Levels Feed</span>
-            </h4>
-            <p class="subtitle mt-3">
-              The levels feed is a combined channel that shows advancements by everyone.
-              You can put filters on this channel to more accurately see the events you want.<br>
-            </p>
-          </div>
-          <div class="column" data-aos="fade-right">
-            <img
-              class="image has-image-centered"
-              src="assets/img/levels.png"
-              alt="levels feed"
-            />
-          </div>
-        </div>
-      </div>
-      <!-- single feature end (Right) -->
-
-      <!-- single feature start (Left) -->
-      <div class="single-feature">
-        <div class="shape-right" data-aos="fade-up-left">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="#9AAAE3"
-              d="M42.7,-62.9C50.9,-52.8,50.1,-34.4,51.7,-19.2C53.4,-4,57.4,8,56.6,20.8C55.8,33.7,50.1,47.4,39.9,53.8C29.6,60.1,14.8,59.1,0.4,58.5C-14,58,-28,57.9,-38,51.5C-48.1,45,-54.3,32.3,-61.3,18.1C-68.4,4,-76.4,-11.7,-71.9,-22.7C-67.4,-33.6,-50.4,-39.8,-36.3,-47.9C-22.2,-56.1,-11.1,-66.3,3.1,-70.5C17.2,-74.7,34.5,-72.9,42.7,-62.9Z"
-              transform="translate(100 100)"
-            />
-          </svg>
-        </div>
-
-        <div class="columns mt-6">
-          <div class="column mr-6">
-            <h4 class="title">
-              <span class="has-text-danger">Deaths Feed</span>
-            </h4>
-            <p class="subtitle mt-3">
-              The deaths feed will show all deaths on the server.
-              This is probably the most valuable feature the bot provides.
-              Deaths are marked depending on if its an <span class="has-text-danger">enemy</span>, <span class="has-text-success">ally</span> or <span class="has-text-grey-light">neutral</span> and if its a PVE death or a PVP kill.
-            </p>
-          </div>
-          <div class="column" data-aos="fade-left">
-            <img
-              class="image has-image-centered"
-              src="assets/img/deaths.png"
-              alt="deaths feed"
-            />
-          </div>
-        </div>
-      </div>
-      <!-- single feature end (Left) -->
-
-      <!-- single feature start (Right) -->
-      <div class="single-feature">
-        <div class="shape-right" data-aos="fade-up-left">
-          <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="#9AAAE3"
-              d="M61.3,-47.1C76.5,-30.7,87.5,-15.3,86.9,1.7C86.4,18.8,74.4,37.4,60.5,46.2C46.7,55.1,31,54.2,16.8,58C2.7,61.8,-10.9,70.3,-25.2,74.5C-39.5,78.7,-56.6,78.7,-69.6,70.2C-82.7,61.8,-91.7,44.8,-88.3,29.2C-84.9,13.6,-69.1,-0.6,-59.1,-17.1C-49.1,-33.6,-44.9,-51.6,-32.3,-65.7C-19.7,-79.8,1.4,-89.9,18.7,-84.6C35.9,-79.3,50.3,-58.6,61.3,-47.1Z"
-              transform="translate(100 100)"
-            />
-          </svg>
-        </div>
-
-        <div class="columns mt-6">
-          <div class="column mr-6">
-            <h4 class="title"><span style="color:#ff5733">Activity Feed</span></h4>
-            <p class="subtitle mt-3">
-              The activity channel will show <code>guild joins</code> and <code>guild leaves</code>, along with player <code>name changes</code>
-            </p>
-          </div>
-          <div class="column" data-aos="fade-right">
-            <img
-              class="image has-image-centered"
-              src="assets/img/activity.png"
-              alt="extra features"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- single feature start (Left) -->
-      <div class="single-feature">
-        <div class="shape-right" data-aos="fade-up-left">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="#9AAAE3"
-              d="M54.2,-67.2C69.4,-63.5,80.4,-46.6,84.6,-28.7C88.7,-10.8,86,8.1,76.8,21.4C67.6,34.7,51.9,42.3,38.1,50.3C24.2,58.3,12.1,66.7,-2.8,70.5C-17.7,74.3,-35.3,73.6,-45.6,64.5C-55.9,55.3,-58.8,37.7,-63.3,21.2C-67.7,4.7,-73.7,-10.6,-71.8,-25.4C-69.8,-40.2,-59.9,-54.5,-46.6,-58.9C-33.3,-63.2,-16.7,-57.6,1.4,-59.6C19.5,-61.5,39,-71,54.2,-67.2Z"
-              transform="translate(100 100)"
-            />
-          </svg>
-        </div>
-
-        <div class="columns mt-6">
-          <div class="column mr-6">
-            <h4 class="title">
-              <span class="has-text-warning">Automatic Enemy Detection</span>
-            </h4>
-            <p class="subtitle mt-3">
-              The bot activity channel will show all commands run using the bot.<br>
-              It will also show when the bot has automatically detected an enemy and has added them to the hunted list.
-            </p>
-          </div>
-          <div class="column" data-aos="fade-left">
-            <img
-              class="image has-image-centered"
-              src="assets/img/botactivity.png"
-              alt="bot activity"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- single feature start (Right) -->
-      <div class="single-feature">
-
-        <div class="columns mt-6">
-          <div class="column mr-6">
-            <h4 class="title"><span class="has-text-info">Notifications</span></h4>
-            <p class="subtitle mt-3">
-              You can opt-in to important events, for example:
-              <ul class="subtitle mt-3 ml-2">
-                <li>- if anyone dies to a rare spawning <code>nemesis boss</code></li>
-                <li>- if an enemy dies <code>fullbless</code></li>
-                <li>- when your <code>galthen satchel</code> cooldown expires.<li>
-                <li>- when the boosted <code>boss</code> and <code>creature</code> change at server save.</li>
-              </ul>
-            </p>
-          </div>
-          <div class="column" data-aos="fade-right">
-            <img
-              class="image has-image-centered"
-              src="assets/img/notifications.png"
-              alt="extra features"
-            />
-          </div>
-        </div>
-      </div>
-
-    </section>
-    <!-- Features Section End -->
-
-    <!-- Stats Section Start
-    <section id="stats" class="section mt-6">
-      <div class="has-text-centered">
-        <h1 class="title lined">Stats</h1>
-        <div class="line line-center blurple"></div>
-      </div>
-
-      <div class="columns mt-6">
-        <div class="column has-text-centered">
-          <p class="title has-text-weight-bold lined">000</p>
-          <span class="subtitle has-text-weight-bold blurple"><i class="fa-solid fa-server"></i> Servers</span>
-        </div>
-
-        <div class="column has-text-centered">
-          <p class="title has-text-weight-bold lined">000</p>
-          <span class="subtitle has-text-weight-bold blurple"><i class="fa-solid fa-terminal"></i> Commands</span>
-        </div>
-
-        <div class="column has-text-centered">
-          <p class="title has-text-weight-bold lined">000</p>
-          <span class="subtitle has-text-weight-bold blurple"><i class="fa-solid fa-users"></i> Users</span>
-        </div>
-      </div>
-    </section>
-    <!-- Stats Section End -->
-    <!-- Invite Section Start -->
-    <section id="commands" class="section mt-6">
-      <div class="columns is-centered">
-        <div class="column is-6">
-          <div class="has-text-left">
-            <p class="title has-text-weight-bold has-text-centered">
-              Commands
-            </p>
-            <p class="subtitle mt-3 has-text-gray box">
-              <strong>/help</strong><br>
-              This command responds with the original message the bot sends when it joins a Discord. It contains basic getting-started information<br>
-              <br>
-              <strong>/setup</strong>: <code>world</code><br>
-              This is the main command that creates the channels and subscribes to events for that <code>world</code>.<br>
-              <br>
-              <strong>/remove</strong>: <code>world</code><br>
-              This command is used to delete the channels & roles created for this <code>world</code> and unsubscribe from its events.<br>
-              <br>
-              <strong>/allies</strong>: <code>list</code>, <code>guild</code>, <code>player</code><br>
-              This command is for managing the <strong><code>allies</code></strong> list.<br>
-              <br>
-              <strong>/hunted</strong>: <code>list</code>, <code>guild</code>, <code>player</code><br>
-              This command is for managing the <strong><code>hunted</code></strong> list.<br>
-              <br>
-              <strong>/filter</strong>: <code>levels</code>, <code>deaths</code><br>
-              This command is used to add a level filter to the <strong><code>levels</code></strong> or <strong><code>deaths</code></strong> channels.<br>
-              This can be used to prevent low-level spam from appearing in these channels.<br>
-              <br>
-              <strong>/fullbless</strong>: <code>level</code><br>
-              When an enemy full blesses, it will poke.<br>
-              This command is used to set a <strong><code>minimum level</code></strong> for these pokes to be triggered, as some teams may not care when low-level enemies die.<br>
-              <br>
-              <strong>/online list</strong>: <code>option</code>, <code>world</code><br>
-              This command is used to toggle the online list as <strong>separate</strong> or <strong>combined</strong>, depending on if you want the online list to be <i>three</i> separate channels or <i>one</i> combined channel.<br>
-              <br>
-              <strong>/neutral</strong>: <code>deaths</code>, <code>levels</code>, <code>tag</code><br>
-              This command is used to <strong>show</strong> or <strong>hide</strong> neutral events in the <strong><code>levels</code></strong> and <strong><code>deaths</code></strong> channels, as some teams may not care when neutrals level or die. You can also <strong><code>tag</code></strong> neutrals for custom highlighting in the <strong><code>deaths</code></strong> channel and grouping in the combined online list.<br>
-              <br>
-              <strong>/exiva</strong>: <code>deaths</code><br>
-              You can use this command to enable the <i>exiva list</i> on <code>allied deaths</code> in the deaths channel. This makes the death posts much larger, but allows you to copy and paste killer names really easily.<br>
-              <br>
-              <strong>/repair</strong>: <code>world</code><br>
-              You can use this command to re-create any channel(s) that you have deleted or unintentionally broken.<br>
-              <br>
-              <strong>/galthen satchel</strong>: <code>character</code><br>
-              Use this command to set up a notification for when your <img
-                class="media-center"
-                src="assets/img/satchel.png"
-                alt="allies"
-                style="width: 20px; margin: 0px 0;"
-              />﻿ cooldown(s) expire.<br>
-              <br>
-              <strong>/boosted</strong>: <code>list</code>, <code>disable</code><br>
-              Use this command to configure your boosted boss and creature notifications.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="privacy policy" class="section mt-6">
-      <div class="columns is-centered">
-        <div class="column is-6">
-          <div class="has-text-left">
-            <p class="title has-text-weight-bold has-text-centered">
-              Privacy Policy
-            </p>
-            <p class="subtitle mt-3 has-text-gray">
-              <strong>References</strong><br>
-              When referring to data, it means Discord info that is stored to retain settings and user configuration.<br>
-              <br>
-              <strong>Collection of data</strong><br>
-              A Discord <code>guild</code> & ids of the <code>channels</code>, <code>categories</code>, or <code>roles</code> that the bot creates - are stored in a database.<br>
-              <br>
-              <strong>Distribution of data</strong><br>
-              None of your data is being distributed to anybody else.<br>
-              <br>
-              <strong>Deletion of data</strong><br>
-              All data for your <code>guild</code> is deleted from the database when the bot is <code>kicked</code> from your Discord server.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="terms of service" class="section mt-6">
-      <div class="columns is-centered">
-        <div class="column is-6">
-          <div class="has-text-centered">
-            <p class="title has-text-weight-bold">
-              Terms of Service
-            </p>
-            <p class="subtitle mt-3 has-text-gray">
-              By inviting and using my bot, you agree to <a href="https://discord.com/terms">Discord's Terms of Service</a><br>& meet every requirement mentioned there.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- Invite Section Start -->
-    <section id="support" class="section mt-6">
-      <div class="columns is-centered">
-        <div class="column is-6">
-          <div class="has-text-centered">
-            <p class="title has-text-weight-bold has-text-centered">
-            Support
-            </p>
-            <p class="subtitle mt-3 has-text-gray">
-              If you need assistance in any way, you can contact me on discord using the link below.<br>
-              Development & progress updates will be posted there too 👍
-            </p>
-            <a href="https://discord.gg/SWMq9Pz8ud" class="button is-blurple is-medium">
-              <strong><i class="fa-brands fa-discord"></i> Community Discord</strong>
-            </a>
-            <a href="mailto:consolesausage@gmail.com" class="button has-background-grey-light is-medium"
-              ><strong><i class="fa-solid fa-envelope has-text-white"></i></strong>
-              </a>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- Invite Section End -->
-
-    <!-- Invite Section End -->
-    <!-- Footer Section Start -->
-    <footer class="footer bg-base">
-      <div class="content has-text-centered has-text-white">
-        <div>
-          <img
-            class="image has-image-centered"
-            src="assets/img/tibia.png"
-            alt="tibia"
-          />
-          <br>
-          <a href="https://www.tibia.com/" class="blurple">Tibia</a> is made by CipSoft, all Tibia content is copyrighted by <a href="https://cipsoft.com" class="blurple">CipSoft GmbH</a>.
-          <br><br>
-            <span class="has-text-weight-bold">
-              Violent Bot
-            </span>
-          <br />
-            &copy; <span id="cp-year"></span> All Rights Reserved.<br>
-            <a href="https://patreon.com/violentbot" class="blurple">Created by Violent Beams</a>
-        </div>
-      </div>
-    </footer>
-
-    <!-- Footer Section End -->
-
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="https://unpkg.com/@popperjs/core@2"></script>
-    <script src="https://unpkg.com/tippy.js@6"></script>
-    <script src="assets/js/script.js"></script>
+<div class="hero" id="top">
+  <div class="wrap">
+    <div class="prompt-line"><span class="sigil">&rsaquo;</span> <span class="cmd">/setup</span> world:Antica<span class="caret"></span></div>
+    <h1><img src="assets/img/avatar.png" alt="">Violent Bot</h1>
+    <p>
+      Online lists, death feeds, level feeds, guild activity and automatic enemy detection for the
+      MMORPG <a href="https://www.tibia.com/news/?subtopic=latestnews">Tibia</a> &mdash; set up in one
+      command, posted into channels the bot builds itself.
+    </p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="https://www.patreon.com/violentbot/membership"><i class="ti ti-crown" aria-hidden="true"></i> Join Patreon to use Violent Bot</a>
+      <a class="btn btn-ghost" href="https://github.com/Leo32onGIT/tibia-bot"><i class="ti ti-brand-github" aria-hidden="true"></i> View Source Code</a>
     </div>
-  </body>
+  </div>
+</div>
+
+<div class="wrap">
+  <h2 class="rule" id="features"><span class="hash">##</span> channels</h2>
+
+  <div class="chan open">
+    <button class="chan-head" type="button" aria-expanded="true">
+      <span class="cname blue"><span class="hashmark">#</span>online-list</span>
+      <span class="blurb">Who's on, right now</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>Run it <code>combined</code> for a single online channel, or <code>separate</code> for dedicated channels for
+        <span style="color:var(--good)">allies</span>, <span style="color:var(--bad)">enemies</span> and
+        <span style="color:var(--muted)">neutrals</span>. The channel name carries the count and refreshes about every 6 minutes.</p>
+      <img src="assets/img/onlinelist.png" alt="The online list channel in Discord">
+    </div>
+  </div>
+
+  <div class="chan">
+    <button class="chan-head" type="button" aria-expanded="false">
+      <span class="cname red"><span class="hashmark">#</span>deaths</span>
+      <span class="blurb">The one you'll actually watch</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>Every death on the server, marked by whether the character was an <span style="color:var(--bad)">enemy</span>,
+        an <span style="color:var(--good)">ally</span> or a <span style="color:var(--muted)">neutral</span>, and whether
+        it was a PvE death or a PvP kill. Add <code>/exiva</code> to allied deaths and killer names become copy-pasteable.</p>
+      <img src="assets/img/deaths.png" alt="The deaths feed in Discord">
+    </div>
+  </div>
+
+  <div class="chan">
+    <button class="chan-head" type="button" aria-expanded="false">
+      <span class="cname purple"><span class="hashmark">#</span>activity</span>
+      <span class="blurb">Guild joins, leaves, name changes</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>Tracks who joined which guild, who left, and who quietly changed their name.</p>
+      <img src="assets/img/activity.png" alt="The activity feed in Discord">
+    </div>
+  </div>
+
+  <div class="chan">
+    <button class="chan-head" type="button" aria-expanded="false">
+      <span class="cname pink"><span class="hashmark">#</span>spawns</span>
+      <span class="blurb">Book a respawn before someone else does</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>Set up respawn claims for your server so everyone can schedule hunts ahead of time. It's a forum &mdash;
+        every respawn gets its own post, showing at a glance whether it's <span style="color:var(--good)">free</span>
+        or <span style="color:var(--bad)">claimed</span>.</p>
+      <img src="assets/img/spawns.png" alt="The spawns forum in Discord, listing respawns as free or claimed">
+    </div>
+  </div>
+
+  <div class="chan">
+    <button class="chan-head" type="button" aria-expanded="false">
+      <span class="cname green"><span class="hashmark">#</span>levels</span>
+      <span class="blurb">Every advancement on the server</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>One combined channel for advancements, with a minimum-level filter so low-level noise never reaches it.</p>
+      <img src="assets/img/levels.png" alt="The levels feed in Discord">
+    </div>
+  </div>
+
+  <div class="chan">
+    <button class="chan-head" type="button" aria-expanded="false">
+      <span class="cname cyan"><span class="hashmark">#</span>notifications</span>
+      <span class="blurb">Only the events you ask for</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>Pokes when someone dies to a rare <code style="color:var(--purple)">nemesis boss</code>, an enemy dies <code style="color:var(--good)">fullbless</code>,
+        my <code>galthen satchel</code> cooldown expires, or the boosted <code>boss</code> and <code>creature</code>
+        change at server save.</p>
+      <img src="assets/img/notifications.png" alt="Notifications in Discord">
+    </div>
+  </div>
+
+  <div class="chan">
+    <button class="chan-head" type="button" aria-expanded="false">
+      <span class="cname amber"><span class="hashmark">#</span>command-log</span>
+      <span class="blurb">Commands + automatic enemy detection</span>
+      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+    </button>
+    <div class="chan-body">
+      <p>Every command run through the bot is logged here &mdash; as is every enemy the bot detected on its own and added
+        to the hunted list.</p>
+      <img src="assets/img/botactivity.png" alt="The command log channel in Discord">
+    </div>
+  </div>
+
+  <h2 class="rule" id="commands"><span class="hash">##</span> commands</h2>
+
+  <div class="console">
+    <div class="console-bar"><span class="d"></span><span class="d"></span><span class="d"></span>&nbsp;violent-bot &mdash; slash commands</div>
+    <div class="console-body">
+      <div class="cline"><div class="c">/help</div><div class="d2">Re-sends the getting-started message the bot posts on join.</div></div>
+      <div class="cline"><div class="c">/stamina</div><div class="d2">Show your respawn claim stamina and what's currently using it.</div></div>
+      <div class="cline"><div class="c">/bookings</div><div class="d2">Show the respawn slots you have booked.</div></div>
+      <div class="cline"><div class="c">/setup <span class="arg">world</span></div><div class="d2">Creates the channels and subscribes to that world's events.</div></div>
+      <div class="cline"><div class="c">/remove <span class="arg">world</span></div><div class="d2">Deletes the channels and roles created for a world, and unsubscribes from its events.</div></div>
+      <div class="cline"><div class="c">/allies <span class="arg">list</span></div><div class="d2">Manage the allies list.</div></div>
+      <div class="cline"><div class="c">/hunted <span class="arg">list</span></div><div class="d2">Manage the hunted list.</div></div>
+      <div class="cline"><div class="c">/filter <span class="arg">levels deaths</span></div><div class="d2">Put a minimum level on the levels or deaths channel to keep low-level spam out.</div></div>
+      <div class="cline"><div class="c">/fullbless <span class="arg">level</span></div><div class="d2">Minimum level at which a fullbless enemy death pokes you.</div></div>
+      <div class="cline"><div class="c">/online list <span class="arg">world</span></div><div class="d2">Toggle the online list between separate (three channels) and combined (one).</div></div>
+      <div class="cline"><div class="c">/neutral <span class="arg">deaths levels</span></div><div class="d2">Show, hide or tag neutral events in the levels and deaths channels.</div></div>
+      <div class="cline"><div class="c">/exiva <span class="arg">deaths</span></div><div class="d2">Adds the exiva list to allied deaths &mdash; bigger posts, easily copied killer names.</div></div>
+      <div class="cline"><div class="c">/repair <span class="arg">world</span></div><div class="d2">Re-creates any channel you deleted or unintentionally broke.</div></div>
+      <div class="cline"><div class="c">/galthen satchel</div><div class="d2">Notifies you when your satchel cooldowns expire.</div></div>
+      <div class="cline"><div class="c">/boosted <span class="arg">list</span></div><div class="d2">Configure your boosted boss and creature notifications.</div></div>
+    </div>
+  </div>
+
+  <h2 class="rule" id="privacy"><span class="hash">##</span> privacy &amp; terms</h2>
+
+  <div class="block">
+    <h4>References</h4>
+    <p>When referring to data, it means Discord info that is stored to retain settings and user configuration.</p>
+    <h4>Collection of data</h4>
+    <p>A Discord <code>guild</code> and the ids of the <code>channels</code>, <code>categories</code> and <code>roles</code>
+      that the bot creates are stored in a database.</p>
+    <h4>Distribution of data</h4>
+    <p>None of your data is being distributed to anybody else.</p>
+    <h4>Deletion of data</h4>
+    <p>All data for your <code>guild</code> is deleted from the database when the bot is kicked from your Discord server.</p>
+  </div>
+  <div class="block">
+    <h4>Terms of service</h4>
+    <p>By inviting and using my bot, you agree to <a href="https://discord.com/terms">Discord's Terms of Service</a>
+      and meet every requirement mentioned there.</p>
+  </div>
+
+  <h2 class="rule" id="support"><span class="hash">##</span> support</h2>
+
+  <div class="block support">
+    <p>If you need assistance in any way you can reach me on Discord &mdash; development and progress updates get posted there too.</p>
+    <div class="btn-row" style="justify-content:center">
+      <a class="btn btn-primary" href="https://discord.gg/SWMq9Pz8ud"><i class="ti ti-brand-discord" aria-hidden="true"></i> Community Discord</a>
+      <a class="btn btn-ghost" href="mailto:consolesausage@gmail.com"><i class="ti ti-mail" aria-hidden="true"></i> Email</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <img src="assets/img/tibia.png" alt="Tibia">
+    <a href="https://www.tibia.com/">Tibia</a> is made by CipSoft &mdash; all Tibia content is copyrighted by
+    <a href="https://cipsoft.com">CipSoft GmbH</a>.<br>
+    <span class="mono" style="color:var(--text-strong)">Violent Bot</span> &copy; <span id="cp-year"></span>
+    All Rights Reserved. &middot;
+    <a href="https://patreon.com/violentbot">Created by Violent Beams</a>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('cp-year').textContent = new Date().getFullYear();
+  document.querySelectorAll('.chan-head').forEach(function (h) {
+    h.addEventListener('click', function () {
+      var open = h.parentElement.classList.toggle('open');
+      h.setAttribute('aria-expanded', String(open));
+    });
+  });
+</script>
+</body>
 </html>
