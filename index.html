@@ -206,7 +206,7 @@
     <div class="chan-body">
       <p>Run it <code>combined</code> for a single online channel, or <code>separate</code> for dedicated channels for
         <span style="color:var(--good)">allies</span>, <span style="color:var(--bad)">enemies</span> and
-        <span style="color:var(--muted)">neutrals</span>. The channel name carries the count and refreshes about every 6 minutes.</p>
+        <span style="color:var(--muted)">neutrals</span>.
       <img src="assets/img/onlinelist.png" alt="The online list channel in Discord">
     </div>
   </div>
@@ -220,7 +220,7 @@
     <div class="chan-body">
       <p>Every death on the server, marked by whether the character was an <span style="color:var(--bad)">enemy</span>,
         an <span style="color:var(--good)">ally</span> or a <span style="color:var(--muted)">neutral</span>, and whether
-        it was a PvE death or a PvP kill. Add <code>/exiva</code> to allied deaths and killer names become copy-pasteable.</p>
+        it was a PvE death or a PvP kill.</p>
       <img src="assets/img/deaths.png" alt="The deaths feed in Discord">
     </div>
   </div>
@@ -232,7 +232,7 @@
       <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
     </button>
     <div class="chan-body">
-      <p>Tracks who joined which guild, who left, and who quietly changed their name.</p>
+      <p>Tracks who joined which guild, who left, who transferred in from other servers and who changed their name.</p>
       <img src="assets/img/activity.png" alt="The activity feed in Discord">
     </div>
   </div>
@@ -245,9 +245,9 @@
     </button>
     <div class="chan-body">
       <p>Set up respawn claims for your server so everyone can schedule hunts ahead of time. It's a forum &mdash;
-        every respawn gets its own post, showing at a glance whether it's <span style="color:var(--good)">free</span>
+        every respawn gets its own spawn card, showing at a glance whether it's <span style="color:var(--good)">free</span>
         or <span style="color:var(--bad)">claimed</span>.</p>
-      <img src="assets/img/spawns.png" alt="The spawns forum in Discord, listing respawns as free or claimed">
+      <img src="assets/img/webui.png" alt="It even includes a web dashboard">
     </div>
   </div>
 
@@ -258,7 +258,7 @@
       <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
     </button>
     <div class="chan-body">
-      <p>One combined channel for advancements, with a minimum-level filter so low-level noise never reaches it.</p>
+      <p>A channel that shows all level advancements on the server, use the <code>/filter</code> to control what gets posted.</p>
       <img src="assets/img/levels.png" alt="The levels feed in Discord">
     </div>
   </div>
@@ -270,8 +270,8 @@
       <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
     </button>
     <div class="chan-body">
-      <p>Pokes when someone dies to a rare <code style="color:var(--purple)">nemesis boss</code>, an enemy dies <code style="color:var(--good)">fullbless</code>,
-        my <code>galthen satchel</code> cooldown expires, or the boosted <code>boss</code> and <code>creature</code>
+      <p>Pokes when someone dies to a rare <code style="color:var(--purple)">nemesis boss</code>, an enemy dies <code style="color:var(--good)">fullbless</code>.<br>
+        You can also setup the bot to message you when your <code>galthen satchel</code> cooldown expires or when the boosted <code>boss</code> and <code>creature</code>
         change at server save.</p>
       <img src="assets/img/notifications.png" alt="Notifications in Discord">
     </div>
@@ -298,6 +298,7 @@
       <div class="cline"><div class="c">/help</div><div class="d2">Re-sends the getting-started message the bot posts on join.</div></div>
       <div class="cline"><div class="c">/stamina</div><div class="d2">Show your respawn claim stamina and what's currently using it.</div></div>
       <div class="cline"><div class="c">/bookings</div><div class="d2">Show the respawn slots you have booked.</div></div>
+      <div class="cline"><div class="c">/patreon</div><div class="d2">Check your patreon status.</div></div>
       <div class="cline"><div class="c">/setup <span class="arg">world</span></div><div class="d2">Creates the channels and subscribes to that world's events.</div></div>
       <div class="cline"><div class="c">/remove <span class="arg">world</span></div><div class="d2">Deletes the channels and roles created for a world, and unsubscribes from its events.</div></div>
       <div class="cline"><div class="c">/allies <span class="arg">list</span></div><div class="d2">Manage the allies list.</div></div>
