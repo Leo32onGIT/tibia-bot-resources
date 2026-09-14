@@ -104,10 +104,10 @@
      clean lines and as five lines with an orphaned word under each. */
   grid-template-columns: 172px 1fr;
   height: 600px;
-  border-radius: 10px 10px 0 0;
+  /* Fully enclosed: nothing is attached beneath it any more. */
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--panel-border);
-  border-bottom: 0;
   /* Discord's own stack, verbatim. gg sans is listed first because a
      reader who has it installed should get the real thing; everyone else
      lands on the vendored Noto Sans above, which is what Discord falls

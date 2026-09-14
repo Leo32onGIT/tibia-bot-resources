@@ -108,19 +108,7 @@
      rendered every embed title, character names included, in an icon
      font) and .caret belongs to the hero's blinking cursor. */
   .lede { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
-
-  /* The pitch for whichever channel is selected, written by demo.js. */
-  .chan-copy {
-    border: 1px solid var(--panel-border); border-top: 0;
-    border-radius: 0 0 10px 10px; background: var(--panel); padding: 15px 17px;
-  }
-  .chan-copy h3 { margin: 0 0 4px; font-size: 12.5px; color: var(--text-strong);
-                  font-family: var(--mono); font-weight: 600; }
-  .chan-copy p { color: var(--muted); font-size: 13px; margin: 0; }
-  .chan-copy b.good { color: var(--good); font-weight: 600; }
-  .chan-copy b.bad { color: var(--bad); font-weight: 600; }
-  .chan-copy b.mute { color: var(--muted); font-weight: 600; }
-  .chan-copy code.purple { color: var(--purple); }
+  .lede b { color: var(--text-strong); font-weight: 600; }
 
   /* ---- Commands: a console block ---- */
   .console { border: 1px solid var(--panel-border); border-radius: 9px; background: var(--panel); overflow: hidden; }
@@ -187,10 +175,11 @@
 </div>
 
 <div class="wrap">
-  <h2 class="rule" id="features"><span class="hash">##</span> channels</h2>
+  <h2 class="rule" id="features"><span class="hash">##</span> features</h2>
 
   <p class="lede">
-    Eight channels, one bot. Pick one &mdash; this is the real thing, not a screenshot.
+    Below is a demonstration of what <b>Violent Bot</b> does and how it presents
+    information in your Discord server.
   </p>
 
   <div class="dc">
@@ -209,32 +198,24 @@
     </div>
   </div>
 
-  <div class="chan-copy">
-    <h3 id="chanBlurb"></h3>
-    <p id="chanCopy"></p>
-  </div>
-
   <h2 class="rule" id="commands"><span class="hash">##</span> commands</h2>
 
   <div class="console">
     <div class="console-bar"><span class="d"></span><span class="d"></span><span class="d"></span>&nbsp;violent-bot &mdash; slash commands</div>
     <div class="console-body">
-      <div class="cline"><div class="c">/help</div><div class="d2">Re-sends the getting-started message the bot posts on join.</div></div>
+      <div class="cline"><div class="c">/help</div><div class="d2">Re-sends the welcome message and the getting-started information.</div></div>
+      <div class="cline"><div class="c">/setup <span class="arg">world</span></div><div class="d2">Creates the channels for a world and subscribes to its events.</div></div>
+      <div class="cline"><div class="c">/settings</div><div class="d2">One panel for everything a tracked world shows &mdash; minimum levels, the online list layout, which deaths and levels appear, exiva lists and the fullbless threshold.</div></div>
+      <div class="cline"><div class="c">/hunted</div><div class="d2">Manage the hunted list.</div></div>
+      <div class="cline"><div class="c">/allies</div><div class="d2">Manage the allies list.</div></div>
+      <div class="cline"><div class="c">/repair <span class="arg">world</span></div><div class="d2">Re-creates any channel you deleted or unintentionally broke.</div></div>
+      <div class="cline"><div class="c">/remove <span class="arg">world</span></div><div class="d2">Deletes the channels and roles created for a world, and unsubscribes from its events.</div></div>
       <div class="cline"><div class="c">/stamina</div><div class="d2">Show your respawn claim stamina and what's currently using it.</div></div>
       <div class="cline"><div class="c">/bookings</div><div class="d2">Show the respawn slots you have booked.</div></div>
-      <div class="cline"><div class="c">/patreon</div><div class="d2">Check your patreon status.</div></div>
-      <div class="cline"><div class="c">/setup <span class="arg">world</span></div><div class="d2">Creates the channels and subscribes to that world's events.</div></div>
-      <div class="cline"><div class="c">/remove <span class="arg">world</span></div><div class="d2">Deletes the channels and roles created for a world, and unsubscribes from its events.</div></div>
-      <div class="cline"><div class="c">/allies <span class="arg">list</span></div><div class="d2">Manage the allies list.</div></div>
-      <div class="cline"><div class="c">/hunted <span class="arg">list</span></div><div class="d2">Manage the hunted list.</div></div>
-      <div class="cline"><div class="c">/filter <span class="arg">levels deaths</span></div><div class="d2">Put a minimum level on the levels or deaths channel to keep low-level spam out.</div></div>
-      <div class="cline"><div class="c">/fullbless <span class="arg">level</span></div><div class="d2">Minimum level at which a fullbless enemy death pokes you.</div></div>
-      <div class="cline"><div class="c">/online list <span class="arg">world</span></div><div class="d2">Toggle the online list between separate (three channels) and combined (one).</div></div>
-      <div class="cline"><div class="c">/neutral <span class="arg">deaths levels</span></div><div class="d2">Show, hide or tag neutral events in the levels and deaths channels.</div></div>
-      <div class="cline"><div class="c">/exiva <span class="arg">deaths</span></div><div class="d2">Adds the exiva list to allied deaths &mdash; bigger posts, easily copied killer names.</div></div>
-      <div class="cline"><div class="c">/repair <span class="arg">world</span></div><div class="d2">Re-creates any channel you deleted or unintentionally broke.</div></div>
-      <div class="cline"><div class="c">/galthen satchel</div><div class="d2">Notifies you when your satchel cooldowns expire.</div></div>
-      <div class="cline"><div class="c">/boosted <span class="arg">list</span></div><div class="d2">Configure your boosted boss and creature notifications.</div></div>
+      <div class="cline"><div class="c">/lootsplit</div><div class="d2">Split a party hunt &mdash; paste your hunt analyser and it does the arithmetic.</div></div>
+      <div class="cline"><div class="c">/galthen <span class="arg">satchel</span></div><div class="d2">Sets a Galthen’s Satchel cooldown timer and messages you when it expires.</div></div>
+      <div class="cline"><div class="c">/boosted <span class="arg">option</span></div><div class="d2">Filter the boosted boss and creature notifications, or turn them off.</div></div>
+      <div class="cline"><div class="c">/patreon</div><div class="d2">View or manage your own Patreon seats.</div></div>
     </div>
   </div>
 

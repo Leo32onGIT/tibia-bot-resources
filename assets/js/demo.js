@@ -163,7 +163,7 @@ function md(text, ago) {
   /* Link text may itself contain one bracketed pair: the bot appends a
      killer's level as "[498]", giving "[Kenn Doll [498]](url)". */
   s = s.replace(/\[((?:[^[\]]|\[[^\]]*\])+)\]\(([^)]+)\)/g,
-                '<a href="$2" target="_blank" rel="noopener">$1</a>');
+                '<a href="$2">$1</a>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -537,66 +537,6 @@ var CH = {
   spawns:   { icon: '📅', nm: 'sᴘᴀᴡɴs', forum: true,
               topic: 'One post per respawn, showing who is on it and who is next.' }
 };
-
-/* =====================================================================
-   7b. PITCH COPY
-
-   The blurb and paragraph index.html currently carries on each accordion
-   row. Kept here rather than in the page so the copy follows whichever
-   channel is selected; the shell writes it into #chanBlurb / #chanCopy
-   when those elements exist, and does nothing when they do not (the lab
-   has no such elements).
-   ===================================================================== */
-var COPY = {
-  online: {
-    blurb: 'Who’s on, right now',
-    body: 'Run it <code>combined</code> for a single online channel, or <code>separate</code> for dedicated ' +
-          'channels for <b class="good">allies</b>, <b class="bad">enemies</b> and <b class="mute">neutrals</b>. ' +
-          'The channel name carries the headcount, so the sidebar is a dashboard.'
-  },
-  deaths: {
-    blurb: 'The one you’ll actually watch',
-    body: 'Every death on the server, marked by whether the character was an <b class="bad">enemy</b>, an ' +
-          '<b class="good">ally</b> or a <b class="mute">neutral</b>, and whether it was a PvE death or a PvP kill. ' +
-          'The colour is the news, not the allegiance — an enemy dying is good news, so it is green. ' +
-          'When one of yours is killed, <code>/exiva</code> lists the killers underneath, ready to copy ' +
-          'straight into the client.'
-  },
-  levels: {
-    blurb: 'Every advancement on the server',
-    body: 'A channel that shows all level advancements on the server. Use <code>/filter</code> to put a floor ' +
-          'under it and keep the low-level churn out.'
-  },
-  activity: {
-    blurb: 'Guild joins, leaves, name changes',
-    body: 'Tracks who joined which guild, who left, who swapped, who transferred in from another server and ' +
-          'who changed their name. Here the colour <em>is</em> the allegiance — the reverse of the deaths feed.'
-  },
-  stats: {
-    blurb: 'What the world did yesterday',
-    body: 'After every server save the bot posts the day’s top experience gained and lost, the best skill ' +
-          'advance, the PVP tally with who killed whom, and what the world killed most of.'
-  },
-  spawns: {
-    blurb: 'Book a respawn before someone else does',
-    body: 'Set up respawn claims for your server so everyone can schedule hunts ahead of time. Every respawn ' +
-          'gets its own post, showing at a glance whether it is <b class="good">free</b> or ' +
-          '<b class="bad">claimed</b>, who has it and when they finish. There is a web dashboard too.'
-  },
-  notify: {
-    blurb: 'Only the events you ask for',
-    body: 'Five things you can subscribe to: an enemy dying <code>fullbless</code>, anyone dying to a rare ' +
-          '<code class="purple">nemesis boss</code>, an ally getting pked, a mass log on your world, and a ' +
-          'character you are watching logging in. The last two message you directly instead of pinging a channel.'
-  },
-  log: {
-    blurb: 'Commands + automatic enemy detection',
-    body: 'Every command run through the bot is logged here — as is every enemy the bot detected on its ' +
-          'own. Kill an ally and the bot adds you to the hunted list without anybody lifting a finger.'
-  }
-};
-/* The three online sub-channels share the combined channel's pitch. */
-COPY.allies = COPY.enemies = COPY.neutrals = COPY.online;
 
 /* =====================================================================
    8. DEMOS
@@ -1578,13 +1518,6 @@ var Shell = (function () {
     el.topic.textContent = CH[active].topic;
     el.hash.textContent = CH[active].forum ? '≡' : '#';
 
-    /* Only the integrated page has these; the lab does not. */
-    var copy = COPY[active];
-    if (copy) {
-      if (el.blurb) el.blurb.textContent = copy.blurb;
-      if (el.copy) el.copy.innerHTML = copy.body;
-    }
-
     if (d.forum) {
       el.feed.innerHTML = d.build();
     } else {
@@ -1653,8 +1586,6 @@ var Shell = (function () {
       el.name = document.getElementById('chName');
       el.topic = document.getElementById('chTopic');
       el.hash = document.getElementById('chHash');
-      el.blurb = document.getElementById('chanBlurb');
-      el.copy = document.getElementById('chanCopy');
 
       el.feed.addEventListener('scroll', function () {
         atBottom = el.feed.scrollHeight - el.feed.scrollTop - el.feed.clientHeight < 40;
