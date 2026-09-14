@@ -184,7 +184,7 @@
 .db-window {
   position: fixed; z-index: 41; display: none;
   left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(460px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 48px));
+  width: min(780px, calc(100vw - 32px)); max-height: min(640px, calc(100vh - 48px));
   background: var(--panel); border: 1px solid var(--panel-border);
   border-radius: 10px; overflow: hidden; box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
 }
@@ -197,31 +197,17 @@
   position: relative; display: flex; align-items: center; gap: 9px;
   padding: 13px 15px; border-bottom: 1px solid var(--panel-border);
 }
-.db-window .win-title { color: var(--text-strong); font-size: 14px; font-weight: 600; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-window .win-title {
+  color: var(--text-strong); font-size: 14px; font-weight: 600; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .db-window .win-region { color: var(--muted); font-size: 11px; font-family: var(--mono); flex: none; }
 .db-window .win-close {
   margin-left: auto; background: none; border: 0; color: var(--muted);
   font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; flex: none;
 }
 .db-window .win-close:hover { color: var(--text-strong); }
-.db-window .win-body { position: relative; padding: 14px 15px; overflow-y: auto; flex: 1; }
-.db-window .strip { display: flex; align-items: center; gap: 7px; font-size: 12.5px; margin-bottom: 4px; }
-.db-window .win-sub { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
-
-.db-window .up-next { margin-top: 14px; }
-.db-window .up-title {
-  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
-  letter-spacing: 0.12em; color: var(--muted); margin-bottom: 7px;
-}
-.db-window .up-row {
-  display: flex; align-items: center; gap: 8px; padding: 6px 0;
-  border-top: 1px solid var(--panel-border); font-size: 12px; color: var(--text);
-}
-.db-window .up-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--st-booked); flex: none; }
-.db-window .up-row.queued .up-pip { background: var(--st-claimed); }
-.db-window .up-when { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
-
+.db-window .win-body { position: relative; padding: 0; overflow-y: auto; flex: 1; }
 .db-window .win-foot {
   position: relative; display: flex; gap: 8px; flex-wrap: wrap;
   padding: 12px 15px; border-top: 1px solid var(--panel-border);
@@ -233,45 +219,64 @@
   border-radius: 7px; padding: 7px 13px; color: var(--text);
   font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
 }
-.db-btn:hover:not([disabled]) { border-color: var(--accent); color: var(--text-strong); }
+.db-btn:hover { border-color: var(--accent); color: var(--text-strong); }
 .db-btn.claim { background: var(--st-free); border-color: var(--st-free); color: #06301a; }
 .db-btn.claim:hover { filter: brightness(1.08); border-color: var(--st-free); color: #06301a; }
 .db-btn.danger { color: var(--st-claimed); border-color: rgba(210, 51, 105, 0.5); }
-.db-btn.danger:hover:not([disabled]) { background: rgba(210, 51, 105, 0.1); border-color: rgba(210, 51, 105, 0.6); color: var(--st-claimed); }
-.db-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
-
-.db-note { color: var(--muted); font-size: 12px; margin: 12px 0 0; line-height: 1.8; }
-.db-note .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 0 10px; border: 1.5px solid; }
-.db-note .sw:first-of-type { margin-left: 0; }
-
-@media (max-width: 620px) {
-  .db-filter { margin-left: 0; flex: 1 1 100%; }
-  .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
-}
+.db-btn.danger:hover { background: rgba(210, 51, 105, 0.1); border-color: rgba(210, 51, 105, 0.6); color: var(--st-claimed); }
 
 /* ===================================================================
-   The week, from board.html's calendar.
+   The week, from board.html.
 
-   Two grids of identical shape stacked in one: the headings and the day
-   columns. A day is a fixed width and the strip is as long as it needs
-   to be — a seventh-of-the-panel column would make the week a page,
-   where a fixed one makes it a strip that runs on as far as there are
-   days and a wider panel simply shows more of it.
+   Two grids of identical shape stacked: .wk-headrow for the day headings
+   and .wk-rows for the columns. Everything absolutely placed on the week
+   — the now line, server save — belongs to the lower one, so its
+   coordinates stay measured from midnight and owe nothing to how tall the
+   headings happen to be.
    =================================================================== */
-.db-window { width: min(760px, calc(100vw - 32px)); }
 
+/* A row of fixed text on a fixed row, as board.html's .strip. */
+.db .strip {
+  display: flex; align-items: center; gap: 11px; padding: 9px 15px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--panel-border); font-size: 12px; color: var(--muted);
+}
+.db .strip .fold-title { margin-left: auto; color: var(--text-strong); font-weight: 600; font-size: 12.5px; }
+.db .strip .muted { color: var(--muted); font-size: 11.5px; }
+
+.db .cal-controls { gap: 10px 14px; }
+.db .cc-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.db .cc-week { margin-left: auto; gap: 10px; }
+.db .field-label { font-size: 11px; color: var(--muted); }
+.db .seg { display: inline-flex; border: 1px solid var(--panel-border); border-radius: 7px; overflow: hidden; }
+.db .seg button {
+  background: none; border: 0; color: var(--muted); font: inherit; font-size: 11.5px;
+  font-weight: 600; padding: 5px 11px; cursor: pointer; font-family: var(--mono);
+}
+.db .seg button + button { border-left: 1px solid var(--panel-border); }
+.db .seg button.on { background: var(--accent); color: #0b0d12; }
+.db .btn-ghost {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid var(--panel-border); border-radius: 7px;
+  padding: 5px 10px; color: var(--muted); font: inherit; font-size: 11.5px; cursor: pointer;
+}
+
+/* Fixed text on a fixed row, written once. */
 .db .cal-legend {
-  display: flex; gap: 14px; padding: 9px 0 11px; flex-wrap: wrap;
-  border-bottom: 1px solid var(--panel-border); margin-top: 14px;
+  display: flex; gap: 14px; padding: 9px 15px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--panel-border);
 }
 .db .cal-legend span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.db .cal-legend .lg-end { margin-left: auto; }
 .db .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; border: 1.5px solid; }
+.db .sw-claimed { border-color: var(--st-claimed); background: rgba(210, 51, 105, 0.3); }
+.db .sw-booked { border-color: var(--st-booked); background: transparent; border-style: dashed; }
+.db .sw-confirmed { border-color: var(--st-confirmed); background: var(--st-confirmed); }
+.db .sw-asked { border-color: var(--st-asked); background: rgba(224, 169, 62, 0.28); }
+.db .sw-pick { border-color: var(--purple); border-style: dashed; background: rgba(167, 139, 250, 0.4); }
+.db .line-now { border: none; border-left: 2px solid var(--bad); border-radius: 0; width: 2px; }
+.db .line-ss { border: none; border-left: 2px dashed var(--warn); border-radius: 0; width: 2px; }
 
-.db .wk-body {
-  overflow: auto; max-height: 260px; margin-top: 2px;
-  /* One finger scrolls the way the browser scrolls. */
-  touch-action: pan-x pan-y;
-}
+.db .wk-body { overflow: auto; max-height: 300px; touch-action: pan-x pan-y; }
 .db .wk-body::-webkit-scrollbar { width: 10px; height: 10px; }
 .db .wk-body::-webkit-scrollbar-thumb {
   background: #2a3140; border-radius: 5px;
@@ -279,68 +284,104 @@
 }
 .db .wk-grid {
   position: relative; width: max-content;
-  --gutter: 46px; --daycol: 132px; --row: 28px; --min-block: 13px;
-  display: grid; grid-template-columns: var(--gutter) repeat(7, var(--daycol));
-  grid-template-rows: auto 1fr;
+  --gutter: 56px; --daycol: 140px; --row: 28px; --min-block: 13px;
 }
+.db .wk-headrow,
+.db .wk-rows { display: grid; grid-template-columns: var(--gutter) repeat(7, var(--daycol)); }
+.db .wk-headrow { position: sticky; top: 0; z-index: 7; background: var(--panel); }
+.db .wk-rows { position: relative; }
+
 /* The corner the two sticky axes meet in, above both of them. */
 .db .wk-corner {
-  position: sticky; left: 0; top: 0; z-index: 8; background: var(--panel);
+  position: sticky; left: 0; z-index: 8; background: var(--panel);
   border-bottom: 1px solid var(--panel-border);
 }
 .db .wk-head {
-  position: sticky; top: 0; z-index: 6; background: var(--panel);
-  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
-  letter-spacing: 0.1em; color: var(--muted); text-align: center;
-  padding: 7px 0 6px; border-bottom: 1px solid var(--panel-border);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); text-align: center; padding: 8px 0 7px;
+  border-bottom: 1px solid var(--panel-border);
 }
 .db .wk-head.today { color: var(--accent); }
 .db .wk-head .dnum { display: block; font-size: 13px; color: var(--text-strong); margin-top: 2px; letter-spacing: 0; }
 
-/* Stuck to the left edge with the days sliding behind it. It needs its
-   own background for that, or the columns show through the labels. */
-.db .wk-hours { position: sticky; left: 0; z-index: 5; background: var(--panel); border-right: 1px solid var(--panel-border); }
+/* Stuck to the left edge with the days sliding behind it. It needs its own
+   background for that, or the columns show through the hour labels. */
+.db .wk-hours {
+  border-right: 1px solid var(--panel-border);
+  position: sticky; left: 0; z-index: 5; background: var(--panel);
+}
 .db .wk-hour {
   height: var(--row); font-family: var(--mono); font-size: 9.5px; color: var(--muted);
   text-align: right; padding-right: 7px; position: relative; top: -5px;
   font-variant-numeric: tabular-nums;
 }
+/* The same local hour said twice, twelve-hour over twenty-four: which of
+   the two ways of writing it a reader thinks in is the thing that
+   actually varies between people. */
+.db .wk-hour .srv { display: block; font-size: 8px; opacity: 0.5; margin-top: -3px; }
+
 .db .wk-col { border-left: 1px solid var(--panel-border); position: relative; }
 .db .wk-cell { height: var(--row); border-bottom: 1px solid rgba(31, 36, 48, 0.55); }
+.db .wk-cell.past { background: rgba(0, 0, 0, 0.3); }
 
 .db .wk-block {
   position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 2px 5px;
-  overflow: hidden; font-family: var(--mono); font-size: 9.5px; line-height: 1.25;
-  border: 1px solid;
+  overflow: hidden; font-family: var(--mono); font-size: 9.5px; line-height: 1.25; border: 1px solid;
   top: calc(var(--row) * var(--at, 0));
   height: max(var(--min-block), calc(var(--row) * var(--len, 1) - 2px));
-  /* Opaque, whatever the state's tint. A wash with the hour rules showing
+  /* Opaque, whatever the state tint. A wash with the hour rules showing
      through reads as coloured glass laid over the grid rather than as a
      thing sitting on it — and on a two-hour block the line across the
      middle looks like the block has been cut in two. */
   background: linear-gradient(var(--tint, transparent), var(--tint, transparent)), var(--panel);
 }
 .db .wk-block .who { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* A time never breaks across two lines. Half of "19:00→21:00" on one line
-   and half on the next is not a shorter label, it is a wrong-looking one. */
+/* A time never breaks across two lines. Half a range on one line and half
+   on the next is not a shorter label, it is a wrong-looking one. */
 .db .wk-block .tm { opacity: 0.75; font-variant-numeric: tabular-nums; display: block; white-space: nowrap; }
 
 /* State decides the colour; whose it is decides how loud. Two hues would
-   mean a booking of yours and one of theirs looked like different kinds
-   of thing, which they are not. */
+   have meant a booking of yours and one of theirs looked like different
+   kinds of thing, which they are not. */
 .db .b-claimed { --tint: rgba(210, 51, 105, 0.26); border-color: var(--st-claimed); color: #f3a6c0; }
 .db .b-booked { --tint: rgba(91, 140, 255, 0.16); border-color: var(--st-booked); border-style: dashed; color: #cfdcff; }
 .db .b-confirmed { --tint: rgba(91, 140, 255, 0.3); border-color: var(--st-confirmed); color: #cfdcff; }
 .db .b-asked { --tint: rgba(224, 169, 62, 0.2); border-color: var(--st-asked); color: #e8c887; }
 .db .b-mine { box-shadow: inset 3px 0 0 currentColor; }
 
-/* The Discord mark before a claimant's name. */
-.db .who .d-mark {
-  width: 11px; height: 11px; flex: none;
-  vertical-align: -1px; fill: var(--claimant);
+/* Server save and now. Both mark a height on the hour axis, and that axis
+   is shared by every column — which is why each spans the whole grid, and
+   why the red flag labelling one lives in the gutter, on screen whatever
+   the strip has been scrolled to. */
+.db .ss-line {
+  position: absolute; left: 0; right: 0; height: 0; z-index: 2; pointer-events: none;
+  border-top: 1px dashed rgba(224, 169, 62, 0.45); top: calc(var(--row) * var(--at, 0));
+}
+.db .ss-label {
+  position: absolute; right: 3px; top: calc(var(--row) * var(--at, 0)); transform: translateY(-100%);
+  font-family: var(--mono); font-size: 8px; color: var(--warn); opacity: 0.9;
+  letter-spacing: 0.08em; pointer-events: none;
+}
+.db .now-line {
+  position: absolute; left: 0; right: 0; height: 0; z-index: 4; pointer-events: none;
+  border-top: 1px solid var(--bad); top: calc(var(--row) * var(--at, 0));
+}
+.db .now-flag {
+  position: absolute; left: 2px; top: calc(var(--row) * var(--at, 0));
+  transform: translateY(-50%); z-index: 6; pointer-events: none;
+  font-family: var(--mono); font-size: 8.5px; font-weight: 600; color: var(--bg);
+  background: var(--bad); border-radius: 3px; padding: 1px 3px;
 }
 
-@media (max-width: 620px) {
-  .db .wk-grid { --daycol: 108px; --gutter: 40px; }
-  .db .wk-body { max-height: 220px; }
+/* The Discord mark before a claimant name. */
+.db .who .d-mark { width: 11px; height: 11px; flex: none; vertical-align: -1px; fill: var(--claimant); }
+
+@media (max-width: 680px) {
+  .db-filter { margin-left: 0; flex: 1 1 100%; }
+  .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
+  .db .wk-grid { --daycol: 112px; --gutter: 46px; }
+  .db .wk-body { max-height: 240px; }
+  .db .cal-legend span:nth-child(n+5) { display: none; }
+  .db .cc-week { margin-left: 0; }
+  .db .strip .fold-title { margin-left: 0; }
 }

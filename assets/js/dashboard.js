@@ -3,14 +3,15 @@
 
    Ported from tibia-bot/src/main/resources/web/board.html.
 
-   It reads the same SpawnState that #spawns writes to, so a claim made in
-   either place shows up in the other. That is the whole argument for the
-   web view existing, and it is the one thing a screenshot of it could
-   never say.
+   Display only. Every button here is a button the real page has, doing
+   nothing — claiming and booking need a booking model behind them, and
+   the round trip is already proved in #spawns above. The board is still
+   READ from the shared SpawnState, so a claim made in Discord shows here.
 
-   Where the two disagree is the point: Discord forum tags can only say
-   Free or Claimed, so a spawn booked for tonight is tagged Free up there
-   with the booking relegated to a field. Down here it is a blue card.
+   Where the two surfaces disagree is the point: Discord forum tags can
+   only say Free or Claimed, so a spawn booked for tonight is tagged Free
+   up there with the booking relegated to a field. Down here it is a blue
+   card, and the week says exactly which evening it is.
    ===================================================================== */
 (function () {
 'use strict';
@@ -64,26 +65,43 @@ function shown() {
   });
 }
 
-/* The state line, as board.html's stateHtml writes it. A state line is
-   mostly punctuation and clock times, and the one word in it worth
-   finding at a glance is the person — so that is the one word set apart. */
+/* How long is left, at the coarseness worth reading it at — board.html's
+   fmtDur. "3hr9m left" and "in 3hr9m" are the same measurement seen from
+   two sides, so they are spelled the same way. */
+function fmtDur(mins) {
+  if (mins < 1) return 'now';
+  if (mins < 60) return mins + 'm';
+  var h = Math.floor(mins / 60), m = mins % 60;
+  return h + 'hr' + (m ? m + 'm' : '');
+}
+
+/* Somebody as this page names them: the one Discord name they answer to,
+   written @name — the same shape the bot uses on the spawn card in the
+   thread. The @ is written here, so a name travels as a name and the
+   punctuation around it stays the page's business. */
+function atName(row) {
+  return DISCORD_MARK + '<b class="at-name">@' + esc(row.who) + '</b>';
+}
+
+/* board.html's STATE_TEXT. A claim says how long is LEFT rather than when
+   it ends: what a board is read to answer is whether it is worth waiting,
+   and a clock time makes the reader do that subtraction themselves. */
 function stateLine(row) {
   if (row.state === 'free') return 'free';
-  var who = DISCORD_MARK + '<span class="at-name">' + esc(row.who) + '</span>';
-  if (row.state === 'claimed') return who + ' until ' + clockTime(row.start + row.mins);
-  if (row.state === 'asked') return who + ' offered ' + clockTime(row.start);
-  return who + ' booked ' + clockTime(row.start);
+  if (row.state === 'claimed') {
+    return atName(row) + ' ' + DOT + ' ' + fmtDur(Math.round(row.left / 60)) + ' left';
+  }
+  if (row.state === 'booked') return atName(row) + ' booked ' + DOT + ' ' + clockTime(row.start);
+  if (row.state === 'confirmed') return atName(row) + ' confirmed ' + DOT + ' ' + clockTime(row.start);
+  return atName(row) + ' asked ' + DOT + ' ' + clockTime(row.start);
 }
 
 function cardHTML(s) {
   var row = SpawnState.get(s.code);
   var live = row.state === 'claimed';
   var done = live ? Math.min(1, Math.max(0, 1 - row.left / Math.max(1, row.mins * 60))) : 0;
-  var art = s.creature
-    ? '<img class="sprite" src="' + creatureImg(s.creature) + '" alt="">'
-    : '';
-  var tick = row.state === 'confirmed'
-    ? '<i class="ti ti-check tick" aria-hidden="true"></i>' : '';
+  var art = s.creature ? '<img class="sprite" src="' + creatureImg(s.creature) + '" alt="">' : '';
+  var tick = row.state === 'confirmed' ? '<i class="ti ti-check tick" aria-hidden="true"></i>' : '';
   var queue = row.queue ? '<span class="queue">+' + row.queue + ' queued</span>' : '';
   var bar = live
     ? '<div class="card-bar"><span style="width:' + (done * 100).toFixed(1) + '%"></span></div>'
@@ -117,25 +135,22 @@ function render() {
   if (open) renderWindow();
 }
 
-/* ---------------------------------------------------------------------
-   The week.
+/* =====================================================================
+   THE WEEK
+   ===================================================================== */
 
-   Booking used to be a link somewhere else, which made planning a hunt
-   feel like a separate errand from taking one — they are the same
-   thought, so they are one window.
+/* Monday-first, and indexed the way board.html indexes it:
+   DAY_NAMES[(getDay()+6)%7]. The first column is today, not Monday. */
+var DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-   Display only here. Everything the real grid does on top of this is
-   about putting a booking somewhere: dragging a block, pinching the zoom,
-   clicking an empty hour. None of that is worth reproducing on a landing
-   page, and all of it would need a booking model behind it. What the page
-   has to show is the shape of the answer — a week with other people's
-   evenings already on it.
+function pad(n) { return String(n).length < 2 ? '0' + n : String(n); }
 
-   Blocks are placed against the hour rather than in pixels: --at is hours
-   from midnight and --len is how many it runs for, so the CSS does the
-   arithmetic and a zoom would be a reflow rather than a redraw.
-   ------------------------------------------------------------------ */
-var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/* Midnight and noon are 12, not 0 — "0am" is not a time anybody writes. */
+function twelveHour(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? 'am' : 'pm'); }
+
+/* Tibia's server save. Drawn where it falls, because a booking either
+   side of it is a different night. */
+var SERVER_SAVE_HOUR = 10;
 
 /* A deterministic evening. Hunts cluster where people are awake, so a
    week of uniformly random blocks reads as noise rather than as a rota. */
@@ -153,22 +168,20 @@ function bookingsFor(code, row) {
   /* Today's block is whatever the card already says, so the week and the
      state line cannot disagree about the same spawn. */
   if (row.state !== 'free') {
-    out.push({
-      day: 0, at: row.start / 60, len: row.mins / 60,
-      state: row.state, who: row.who, mine: !!row.mine
-    });
+    out.push({ day: 0, at: row.start / 60, len: row.mins / 60,
+               state: row.state, who: row.who, mine: !!row.mine });
   }
 
   var members = D.MEMBERS;
   for (var d = 0; d < 7; d++) {
     var count = d === 0 ? 1 : (n() < 0.55 ? 1 : (n() < 0.5 ? 2 : 0));
     for (var k = 0; k < count; k++) {
-      var at = 16 + Math.floor(n() * 7);          /* evenings, 16:00-22:00 */
-      if (k === 1) at = 8 + Math.floor(n() * 5);  /* the odd morning slot  */
+      var at = 16 + Math.floor(n() * 7);
+      if (k === 1) at = 8 + Math.floor(n() * 5);
       var len = [2, 3, 4][Math.floor(n() * 3)];
-      var state = n() < 0.45 ? 'confirmed' : 'booked';
       out.push({
-        day: d, at: at, len: len, state: state,
+        day: d, at: at, len: len,
+        state: n() < 0.45 ? 'confirmed' : 'booked',
         who: members[Math.floor(n() * members.length)], mine: false
       });
     }
@@ -176,56 +189,111 @@ function bookingsFor(code, row) {
   return out;
 }
 
+/* Two grids of identical shape stacked — .wk-headrow and .wk-rows — so
+   everything absolutely placed on the week (the now line, server save)
+   keeps coordinates measured from midnight and owes nothing to how tall
+   the headings happen to be.
+
+   Blocks are placed against the hour rather than in pixels: --at is hours
+   from midnight and --len is how many it runs for, so the CSS does the
+   arithmetic exactly as the real grid does. */
 function weekHTML(s, row) {
-  var today = new Date();
+  var now = new Date();
   var days = [];
   for (var d = 0; d < 7; d++) {
-    var date = new Date(today.getTime() + d * 86400000);
-    days.push({ name: DAY_NAMES[date.getDay()], num: date.getDate(), today: d === 0 });
+    var date = new Date(now.getTime() + d * 86400000);
+    days.push({
+      name: DAY_NAMES[(date.getDay() + 6) % 7],
+      num: date.getDate(),
+      /* The first of a month says which month, so a strip scrolled a long
+         way forward is never a run of bare numbers. */
+      month: date.getDate() === 1 ? date.toLocaleDateString(undefined, { month: 'short' }) : '',
+      today: d === 0
+    });
   }
 
-  var head = '<div class="wk-corner"></div>' + days.map(function (day) {
-    return '<div class="wk-head' + (day.today ? ' today' : '') + '">' +
-           day.name + '<span class="dnum">' + day.num + '</span></div>';
+  var heads = days.map(function (day) {
+    return '<div class="wk-head ' + (day.today ? 'today' : '') + '">' + day.name +
+           '<span class="dnum">' + day.num + (day.month ? ' ' + day.month : '') + '</span></div>';
   }).join('');
 
-  var hours = '';
+  /* The same local hour said twice, twelve-hour over twenty-four: which of
+     the two ways of writing it people think in is the thing that actually
+     varies between readers. */
+  var hourRows = '';
   for (var h = 0; h < 24; h++) {
-    hours += '<div class="wk-hour">' + (h < 10 ? '0' + h : h) + ':00</div>';
+    hourRows += '<div class="wk-hour">' + twelveHour(h) +
+                '<span class="srv">' + pad(h) + ':00</span></div>';
   }
 
   var blocks = bookingsFor(s.code, row);
   var cols = days.map(function (day, index) {
     var cells = '';
-    for (var c = 0; c < 24; c++) cells += '<div class="wk-cell"></div>';
+    for (var c = 0; c < 24; c++) {
+      var past = index === 0 && c + 1 <= now.getHours();
+      cells += '<div class="wk-cell' + (past ? ' past' : '') + '"></div>';
+    }
     var placed = blocks.filter(function (b) { return b.day === index; }).map(function (b) {
-      var from = Math.floor(b.at) + ':' + (b.at % 1 ? '30' : '00');
-      var to = (Math.floor(b.at + b.len) % 24) + ':' + ((b.at + b.len) % 1 ? '30' : '00');
+      var from = twelveHour(Math.floor(b.at));
+      var to = twelveHour(Math.floor(b.at + b.len) % 24);
       return '<div class="wk-block b-' + b.state + (b.mine ? ' b-mine' : '') +
              '" style="--at:' + b.at + ';--len:' + b.len + '">' +
-               '<span class="who">' + esc(b.who) + '</span>' +
+               '<span class="who">@' + esc(b.who) + '</span>' +
                '<span class="tm">' + from + ARROW + to + '</span>' +
              '</div>';
     }).join('');
     return '<div class="wk-col">' + cells + placed + '</div>';
   }).join('');
 
-  return '<div class="cal-legend">' +
-      '<span><i class="swatch b-claimed"></i>being hunted</span>' +
-      '<span><i class="swatch b-booked"></i>booked</span>' +
-      '<span><i class="swatch b-confirmed"></i>confirmed</span>' +
-      '<span><i class="swatch b-asked"></i>offered</span>' +
-    '</div>' +
-    '<div class="wk-body" id="db-week">' +
-      '<div class="wk-grid">' + head +
-        '<div class="wk-hours">' + hours + '</div>' + cols +
+  var nowAt = now.getHours() + now.getMinutes() / 60;
+
+  return '<div class="cal">' +
+      '<div class="strip cal-controls">' +
+        '<span class="cc-row cc-repeat">' +
+          '<span class="field-label">Book</span>' +
+          '<span class="seg"><button class="on">Once</button><button>Weekly</button></span>' +
+        '</span>' +
+        '<span class="cc-row cc-week">' +
+          '<span class="seg">' +
+            '<button aria-label="Back a week">&lsaquo;</button>' +
+            '<button>This week</button>' +
+            '<button aria-label="Forward a week">&rsaquo;</button>' +
+          '</span>' +
+          '<button class="btn-ghost"><i class="ti ti-crosshair" aria-hidden="true"></i> Now</button>' +
+        '</span>' +
+      '</div>' +
+      '<div class="cal-legend">' +
+        '<span><i class="swatch sw-claimed"></i>Being hunted</span>' +
+        '<span><i class="swatch sw-booked"></i>Booked</span>' +
+        '<span><i class="swatch sw-confirmed"></i>Booked &amp; confirmed</span>' +
+        '<span><i class="swatch sw-asked"></i>Asked</span>' +
+        '<span><i class="swatch sw-pick"></i>Your selection</span>' +
+        '<span class="lg-end"><i class="swatch line-now"></i>Now</span>' +
+        '<span><i class="swatch line-ss"></i>Server save</span>' +
+      '</div>' +
+      '<div class="wk-body" id="db-week">' +
+        '<div class="wk-grid">' +
+          '<div class="wk-headrow"><div class="wk-corner"></div>' + heads + '</div>' +
+          '<div class="wk-rows">' +
+            '<div class="wk-hours">' + hourRows +
+              '<span class="now-flag" style="--at:' + nowAt + '">' +
+                pad(now.getHours()) + ':' + pad(now.getMinutes()) + '</span>' +
+            '</div>' + cols +
+            '<div class="ss-line" style="--at:' + SERVER_SAVE_HOUR + '"></div>' +
+            '<div class="ss-label" style="--at:' + SERVER_SAVE_HOUR + '">SERVER SAVE</div>' +
+            '<div class="now-line" style="--at:' + nowAt + '"></div>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
     '</div>';
 }
 
 /* ---------------------------------------------------------------------
    The spawn window. One window per spawn, holding the whole decision:
-   what is happening on it now, and the week it is booked into.
+   what is happening on it now, and the week it is booked into. Booking
+   used to be a link somewhere else, which made planning a hunt feel like
+   a separate errand from taking one — they are the same thought, so they
+   are one window.
    ------------------------------------------------------------------ */
 function renderWindow() {
   var s = SPAWNS.filter(function (x) { return x.code === open; })[0];
@@ -238,33 +306,25 @@ function renderWindow() {
   el.winRegion.textContent = s.region;
   el.watermark.src = creatureImg(s.creature);
 
-  var sub;
+  var summary;
   if (live) {
-    sub = 'Being hunted now ' + DOT + ' ' + clockTime(row.start) + ' ' + ARROW + ' ' +
-          clockTime(row.start + row.mins);
+    summary = 'ends ' + clockTime(row.start + row.mins);
   } else if (row.state === 'free') {
-    sub = 'Nobody is on this respawn right now.';
-  } else if (row.state === 'asked') {
-    sub = 'A handover has been offered and is waiting on an answer.';
+    summary = 'nothing booked today';
   } else {
-    sub = 'Free right now — the window below is already spoken for.';
+    summary = 'booked from ' + clockTime(row.start);
   }
 
-  var body = '<div class="strip">' +
+  el.winBody.innerHTML =
+    '<div class="strip cal-head">' +
       '<span class="dot ' + row.state + '"></span>' +
       '<span class="who' + (row.state === 'free' ? ' free' : '') + '">' + stateLine(row) + '</span>' +
+      '<span class="fold-title">Book a time</span>' +
+      '<span class="muted">' + summary + '</span>' +
     '</div>' +
-    '<p class="win-sub">' + sub + '</p>';
+    weekHTML(s, row);
 
-  if (row.queue) {
-    body += '<div class="up-next"><div class="up-row queued"><span class="up-pip"></span>' +
-            '<span>' + row.queue + ' waiting behind</span>' +
-            '<span class="up-when">after this</span></div></div>';
-  }
-  body += weekHTML(s, row);
-  el.winBody.innerHTML = body;
-
-  /* Opens on this spawn's own block where it has one, and on the evening
+  /* Opens on the spawn's own block where it has one, and on the evening
      otherwise. Midnight is the top of the grid and nothing happens there
      — and a window that opens on an empty 3am while the card above it
      says "being hunted now" reads as two views of different spawns. */
@@ -274,18 +334,12 @@ function renderWindow() {
     week.scrollTop = Math.max(0, (at - 1.5) * 28);
   }
 
-  /* The real footer acts; this one only says what the real one offers.
-     Claiming and booking need a booking model behind them, and the page
-     already proves the round trip in #spawns above — repeating it here
-     would buy a second way to do the same thing. */
+  /* The real footer acts; this one only says what the real one offers. */
   el.winFoot.innerHTML = live
     ? (row.mine
-        ? '<button class="db-btn danger">Leave</button>' +
-          '<button class="db-btn">Book</button><button class="db-btn">Config</button>'
-        : '<button class="db-btn">Join queue</button>' +
-          '<button class="db-btn">Book</button><button class="db-btn">Config</button>')
-    : '<button class="db-btn claim">Claim</button>' +
-      '<button class="db-btn">Book</button><button class="db-btn">Config</button>';
+        ? '<button class="db-btn danger">Leave</button><button class="db-btn">Book</button><button class="db-btn">Config</button>'
+        : '<button class="db-btn">Join queue</button><button class="db-btn">Book</button><button class="db-btn">Config</button>')
+    : '<button class="db-btn claim">Claim</button><button class="db-btn">Book</button><button class="db-btn">Config</button>';
 }
 
 function openWindow(code) {
@@ -311,11 +365,8 @@ function setLive(on) {
   timer = setInterval(function () {
     var rows = SpawnState.all(), moved = false;
     Object.keys(rows).forEach(function (code) {
-      var row = rows[code];
-      if (row.state === 'claimed' && row.left > 0) {
-        row.left = Math.max(0, row.left - 6);
-        moved = true;
-      }
+      var r = rows[code];
+      if (r.state === 'claimed' && r.left > 0) { r.left = Math.max(0, r.left - 6); moved = true; }
     });
     if (moved) render();
   }, 6000);
@@ -342,13 +393,6 @@ function init() {
   document.getElementById('db-filter').addEventListener('input', function (ev) {
     filter = ev.target.value.trim();
     render();
-  });
-
-  var fold = document.getElementById('db-mod');
-  var head = fold.querySelector('.db-fold');
-  head.addEventListener('click', function () {
-    var on = fold.classList.toggle('open');
-    head.setAttribute('aria-expanded', String(on));
   });
 
   el.veil.addEventListener('click', closeWindow);
