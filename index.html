@@ -14,6 +14,7 @@
 <meta content="#5b8cff" data-react-helmet="true" name="theme-color">
 <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="assets/css/discord.css">
 <style>
   /* Palette and component language are shared with the bot's own monitoring
      dashboard (tibia-bot/src/main/resources/web/dashboard.html) so the two
@@ -100,33 +101,26 @@
   .rule::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); }
   .rule .hash { color: var(--accent); }
 
-  /* ---- Features: collapsible #channel rows ---- */
-  .chan { border: 1px solid var(--panel-border); border-radius: 9px; background: var(--panel); overflow: hidden; margin-bottom: 10px; }
-  .chan-head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; cursor: pointer;
-               width: 100%; background: none; border: 0; text-align: left; color: inherit; font: inherit; }
-  .chan-head:hover { background: rgba(255,255,255,0.02); }
-  /* The channel name carries its own colour coding — the tinted-chip treatment
-     the dashboard uses for .tag, applied to the name rather than sat beside it. */
-  .cname {
-    font-family: var(--mono); font-size: 13.5px; font-weight: 600;
-    display: inline-flex; align-items: baseline;
-    padding: 3px 9px; border-radius: 5px; flex-shrink: 0;
+  /* ---- Channels: the mock Discord client ----
+     The client itself is assets/css/discord.css; this is only what sits
+     around it on the page. NOTE the two class names the skin had to avoid:
+     .ti belongs to the Tabler icon webfont loaded above (it would have
+     rendered every embed title, character names included, in an icon
+     font) and .caret belongs to the hero's blinking cursor. */
+  .lede { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+
+  /* The pitch for whichever channel is selected, written by demo.js. */
+  .chan-copy {
+    border: 1px solid var(--panel-border); border-top: 0;
+    border-radius: 0 0 10px 10px; background: var(--panel); padding: 15px 17px;
   }
-  .cname .hashmark { opacity: 0.55; margin-right: 1px; }
-  .cname.blue { background: rgba(91,140,255,0.15); color: var(--accent); }
-  .cname.green { background: rgba(62,207,142,0.15); color: var(--good); }
-  .cname.red { background: rgba(224,86,62,0.15); color: var(--bad); }
-  .cname.amber { background: rgba(224,169,62,0.15); color: var(--warn); }
-  .cname.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
-  .cname.pink { background: rgba(232,121,185,0.15); color: var(--pink); }
-  .cname.cyan { background: rgba(34,211,238,0.15); color: var(--cyan); }
-  .chan-head .blurb { color: var(--muted); font-size: 12.5px; margin-left: auto; text-align: right; }
-  .chan-head .chev { color: var(--muted); font-size: 13px; transition: transform 0.15s ease; }
-  .chan.open .chev { transform: rotate(180deg); }
-  .chan-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--panel-border); }
-  .chan.open .chan-body { display: block; }
-  .chan-body p { color: var(--muted); font-size: 13px; margin: 13px 0; }
-  .chan-body img { width: 100%; border-radius: 7px; border: 1px solid var(--panel-border); display: block; margin-top: 4px; }
+  .chan-copy h3 { margin: 0 0 4px; font-size: 12.5px; color: var(--text-strong);
+                  font-family: var(--mono); font-weight: 600; }
+  .chan-copy p { color: var(--muted); font-size: 13px; margin: 0; }
+  .chan-copy b.good { color: var(--good); font-weight: 600; }
+  .chan-copy b.bad { color: var(--bad); font-weight: 600; }
+  .chan-copy b.mute { color: var(--muted); font-weight: 600; }
+  .chan-copy code.purple { color: var(--purple); }
 
   /* ---- Commands: a console block ---- */
   .console { border: 1px solid var(--panel-border); border-radius: 9px; background: var(--panel); overflow: hidden; }
@@ -155,8 +149,6 @@
   footer img { width: 100px; opacity: 0.5; display: block; margin: 0 auto 10px; }
 
   @media (max-width: 620px) {
-    .chan-head { flex-wrap: wrap; }
-    .chan-head .blurb { margin-left: 0; width: 100%; text-align: left; }
     .cline { grid-template-columns: 1fr; gap: 3px; }
     .hero { padding: 52px 0 34px; }
     .hero h1 { gap: 12px; }
@@ -197,96 +189,29 @@
 <div class="wrap">
   <h2 class="rule" id="features"><span class="hash">##</span> channels</h2>
 
-  <div class="chan open">
-    <button class="chan-head" type="button" aria-expanded="true">
-      <span class="cname blue"><span class="hashmark">#</span>online-list</span>
-      <span class="blurb">Who's on, right now</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>Run it <code>combined</code> for a single online channel, or <code>separate</code> for dedicated channels for
-        <span style="color:var(--good)">allies</span>, <span style="color:var(--bad)">enemies</span> and
-        <span style="color:var(--muted)">neutrals</span>.
-      <img src="assets/img/onlinelist.png" alt="The online list channel in Discord">
+  <p class="lede">
+    Eight channels, one bot. Pick one &mdash; this is the real thing, not a screenshot.
+  </p>
+
+  <div class="dc">
+    <div class="dc-side">
+      <div class="dc-guild">Violent Bot <span class="dc-caret">&#9660;</span></div>
+      <div class="dc-chans" id="chans"></div>
+    </div>
+    <div class="dc-main">
+      <div class="dc-strip" id="strip"></div>
+      <div class="dc-top">
+        <span class="h" id="chHash">#</span>
+        <span class="nm" id="chName"></span>
+        <span class="topic" id="chTopic"></span>
+      </div>
+      <div class="dc-scroll" id="feed"></div>
     </div>
   </div>
 
-  <div class="chan">
-    <button class="chan-head" type="button" aria-expanded="false">
-      <span class="cname red"><span class="hashmark">#</span>deaths</span>
-      <span class="blurb">The one you'll actually watch</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>Every death on the server, marked by whether the character was an <span style="color:var(--bad)">enemy</span>,
-        an <span style="color:var(--good)">ally</span> or a <span style="color:var(--muted)">neutral</span>, and whether
-        it was a PvE death or a PvP kill.</p>
-      <img src="assets/img/deaths.png" alt="The deaths feed in Discord">
-    </div>
-  </div>
-
-  <div class="chan">
-    <button class="chan-head" type="button" aria-expanded="false">
-      <span class="cname purple"><span class="hashmark">#</span>activity</span>
-      <span class="blurb">Guild joins, leaves, name changes</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>Tracks who joined which guild, who left, who transferred in from other servers and who changed their name.</p>
-      <img src="assets/img/activity.png" alt="The activity feed in Discord">
-    </div>
-  </div>
-
-  <div class="chan">
-    <button class="chan-head" type="button" aria-expanded="false">
-      <span class="cname pink"><span class="hashmark">#</span>spawns</span>
-      <span class="blurb">Book a respawn before someone else does</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>Set up respawn claims for your server so everyone can schedule hunts ahead of time. Every respawn gets its own spawn card, showing at a glance whether it's <span style="color:var(--good)">free</span>
-        or <span style="color:var(--bad)">claimed</span>.</p>
-      <img src="assets/img/webui.png" alt="It even includes a web dashboard">
-    </div>
-  </div>
-
-  <div class="chan">
-    <button class="chan-head" type="button" aria-expanded="false">
-      <span class="cname green"><span class="hashmark">#</span>levels</span>
-      <span class="blurb">Every advancement on the server</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>A channel that shows all level advancements on the server, use the <code>/filter</code> to control what gets posted.</p>
-      <img src="assets/img/levels.png" alt="The levels feed in Discord">
-    </div>
-  </div>
-
-  <div class="chan">
-    <button class="chan-head" type="button" aria-expanded="false">
-      <span class="cname cyan"><span class="hashmark">#</span>notifications</span>
-      <span class="blurb">Only the events you ask for</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>Pokes when someone dies to a rare <code style="color:var(--purple)">nemesis boss</code>, an enemy dies <code style="color:var(--good)">fullbless</code>.<br>
-        You can also setup the bot to message you when your <code>galthen satchel</code> cooldown expires or when the boosted <code>boss</code> and <code>creature</code>
-        change at server save.</p>
-      <img src="assets/img/notifications.png" alt="Notifications in Discord">
-    </div>
-  </div>
-
-  <div class="chan">
-    <button class="chan-head" type="button" aria-expanded="false">
-      <span class="cname amber"><span class="hashmark">#</span>command-log</span>
-      <span class="blurb">Commands + automatic enemy detection</span>
-      <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
-    </button>
-    <div class="chan-body">
-      <p>Every command run through the bot is logged here &mdash; as is every enemy the bot detected on its own and added
-        to the hunted list.</p>
-      <img src="assets/img/botactivity.png" alt="The command log channel in Discord">
-    </div>
+  <div class="chan-copy">
+    <h3 id="chanBlurb"></h3>
+    <p id="chanCopy"></p>
   </div>
 
   <h2 class="rule" id="commands"><span class="hash">##</span> commands</h2>
@@ -356,12 +281,7 @@
 
 <script>
   document.getElementById('cp-year').textContent = new Date().getFullYear();
-  document.querySelectorAll('.chan-head').forEach(function (h) {
-    h.addEventListener('click', function () {
-      var open = h.parentElement.classList.toggle('open');
-      h.setAttribute('aria-expanded', String(open));
-    });
-  });
 </script>
+<script src="assets/js/demo.js"></script>
 </body>
 </html>

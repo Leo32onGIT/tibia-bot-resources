@@ -333,6 +333,11 @@ function charAt(i) { return ROSTER[((i % ROSTER.length) + ROSTER.length) % ROSTE
 var STRIDE = { deaths: 23, levels: 17, activity: 29 };
 function someone(r) { return ROSTER[Math.floor(r() * ROSTER.length) % ROSTER.length]; }
 
+/* The allied slice, walked the same way, for the "one of ours just died"
+   case the deaths feed is built around. */
+var ALLIES = ROSTER.filter(function (c) { return c.side === 'ally'; });
+function allyAt(i) { return ALLIES[((i * 5) % ALLIES.length + ALLIES.length) % ALLIES.length]; }
+
 /* The guild icon a character wears, per presentation/GuildIcons.classify. */
 function sideIcon(c) {
   if (c.side === 'ally') return c.guild ? '<:guild:>' : '<:ally:>';
@@ -373,7 +378,7 @@ function clock(ago) {
 function embedHTML(e, ago) {
   var body = '';
   if (e.title) {
-    body += '<div class="ti' + (e.plain ? ' plain' : '') + '">' + md(e.title, ago) + '</div>';
+    body += '<div class="etitle' + (e.plain ? ' plain' : '') + '">' + md(e.title, ago) + '</div>';
   }
   if (e.desc) body += '<div class="de">' + md(e.desc, ago) + '</div>';
 
@@ -497,7 +502,9 @@ var COPY = {
     blurb: 'The one you’ll actually watch',
     body: 'Every death on the server, marked by whether the character was an <b class="bad">enemy</b>, an ' +
           '<b class="good">ally</b> or a <b class="mute">neutral</b>, and whether it was a PvE death or a PvP kill. ' +
-          'The colour is the news, not the allegiance — an enemy dying is good news, so it is green.'
+          'The colour is the news, not the allegiance — an enemy dying is good news, so it is green. ' +
+          'When one of yours is killed, <code>/exiva</code> lists the killers underneath, ready to copy ' +
+          'straight into the client.'
   },
   levels: {
     blurb: 'Every advancement on the server',
@@ -549,17 +556,26 @@ var Demos = {};
    #deaths — TibiaBot.scala:1078-1325, presentation/DeathEmbeds.scala
    ------------------------------------------------------------------ */
 Demos.deaths = (function () {
-  var st = { min: 20, exiva: false, neutral: 'show' };
+  /* No control strip any more, so these are what the channel shows.
+     exiva is on because the block is worth seeing; 20 is the bot's own
+     default for deaths_min. */
+  var st = { min: 20, exiva: true, neutral: 'show' };
   var pool = [], cursor = 0;
 
   function make(i) {
     var r = rng(i * 7919 + 13);
-    var c = charAt(i * STRIDE.deaths);
+
+    /* Every sixth death is one of yours, killed by players. Left to chance
+       that case is about one row in thirteen, so a ten-row window often
+       showed none of it — and it is the case the channel exists for: the
+       red embed, the list of who did it, and the exiva block under it. */
+    var allyPk = i % 6 === 2;
+    var c = allyPk ? allyAt(i) : charAt(i * STRIDE.deaths);
 
     /* The character's own level drifts a little each appearance, so a
        familiar name is not frozen at one number all session. */
     var lvl = Math.max(8, c.level + between(r, -6, 6));
-    var pvp = r() < 0.34;
+    var pvp = allyPk || r() < 0.34;
     var boss = !pvp && r() < 0.08;
     var envr = !pvp && !boss && r() < 0.12;
     var suicide = !pvp && !boss && !envr && r() < 0.05;
@@ -663,21 +679,6 @@ Demos.deaths = (function () {
       posted.forEach(function (p) { p.ago += 6; });
       posted.push({ i: cursor++, ago: 2 });
       if (posted.length > 15) posted.shift();
-    },
-    controls:
-      row('/filter <span class="arg">deaths</span>',
-          slider('d-min', 0, 700, 5, 20),
-          'Minimum level. Drag it &mdash; low-level noise disappears.') +
-      row('/exiva <span class="arg">deaths</span>',
-          seg('d-exiva', [['off', 'off', true], ['on', 'on', false]]),
-          'Adds a copy-paste exiva list to your own side&rsquo;s deaths.') +
-      row('/neutral <span class="arg">deaths</span>',
-          seg('d-neutral', [['show', 'show', true], ['hide', 'hide', false]]),
-          'Everyone who is neither an ally nor an enemy.'),
-    wire: function (on) {
-      on('d-min', function (v) { st.min = +v; });
-      on('d-exiva', function (v) { st.exiva = v === 'on'; });
-      on('d-neutral', function (v) { st.neutral = v; });
     }
   };
 })();
@@ -744,17 +745,6 @@ Demos.levels = (function () {
       posted.forEach(function (p) { p.ago += 6; });
       posted.push({ i: cursor++, ago: 2 });
       if (posted.length > 22) posted.shift();
-    },
-    controls:
-      row('/filter <span class="arg">levels</span>',
-          slider('l-min', 0, 700, 5, 8),
-          'Keeps the channel to advancements worth reading about.') +
-      row('/neutral <span class="arg">levels</span>',
-          seg('l-neutral', [['show', 'show', true], ['hide', 'hide', false]]),
-          'Hide everyone your server does not track.'),
-    wire: function (on) {
-      on('l-min', function (v) { st.min = +v; });
-      on('l-neutral', function (v) { st.neutral = v; });
     }
   };
 })();
@@ -838,19 +828,6 @@ Demos.activity = (function () {
       posted.forEach(function (p) { p.ago += 12; });
       posted.push({ i: cursor++, ago: 4 });
       if (posted.length > 13) posted.shift();
-    },
-    controls:
-      row('event type',
-          chips('a-kind', [['join', 'join'], ['leave', 'leave'], ['swap', 'swap'],
-                           ['rename', 'rename'], ['transfer', 'transfer']]),
-          'Every join, leave, guild swap, name change and world transfer.') +
-      row('colour',
-          '<span class="legend"><span class="sw" style="background:' + C.green + '"></span>allied' +
-          '<span class="sw" style="background:' + C.red + '"></span>hunted' +
-          '<span class="sw" style="background:' + C.yellow + '"></span>neutral</span>',
-          'The reverse of #deaths &mdash; here the colour is the side, not the news.'),
-    wire: function (on) {
-      on('a-kind', function (v, pressed) { st.kinds[v] = pressed ? 1 : 0; });
     }
   };
 })();
@@ -947,18 +924,6 @@ Demos.online = (function () {
         if (p) p.dur = between(r, 30, 200);
       }
       return true;
-    },
-    controls:
-      row('/online list <span class="arg">' + WORLD + '</span>',
-          seg('o-mode', [['combined', 'combined', true], ['separate', 'separate', false]]),
-          'One channel, or a dedicated channel each for allies, enemies and neutrals.') +
-      row('row markers',
-          '<span class="legend"><span class="mk">' + custom('levelup') + '</span>levelled up' +
-          '<span class="mk">' + uni('zap') + '</span>just logged in' +
-          '<span class="mk">' + uni('zzz') + '</span>on over 5 hours</span>',
-          'The channel name carries the headcount, so the sidebar is a dashboard.'),
-    wire: function (on) {
-      on('o-mode', function (v) { st.mode = v; st.view = v === 'combined' ? 'online' : 'allies'; });
     }
   };
 })();
@@ -1070,17 +1035,7 @@ Demos.stats = (function () {
     ch: 'stats',
     fromTop: true,
     build: build,
-    tick: null,
-    controls:
-      row('posted automatically',
-          '<span class="legend">one message, three embeds, after every server save</span>',
-          'Nothing to configure &mdash; the channel fills itself once a day.') +
-      row('colour',
-          '<span class="legend"><span class="sw" style="background:' + C.green + '"></span>the world' +
-          '<span class="sw" style="background:' + C.red + '"></span>PVP' +
-          '<span class="sw" style="background:' + C.yellow + '"></span>creatures</span>',
-          'Green is your side doing well, red is the war, yellow is the world getting on with it.'),
-    wire: function () {}
+    tick: null
   };
 })();
 
@@ -1190,15 +1145,7 @@ Demos.notify = (function () {
           : '<:' + role.emoji + ':> Removed the @' + role.name + '@ role.';
       }
       return true;
-    },
-    controls:
-      row('press a button',
-          '<span class="legend">five roles, one row, no labels — just the emoji</span>',
-          'Three toggle a role that gets pinged in a channel. The last two open a form for a DM instead.') +
-      row('posted automatically',
-          '<span class="legend">the boosted block is deleted and re-posted every server save</span>',
-          'Boosted boss and creature, Rashid, your Dream Courts boss, and the Drome cycle when it is due.'),
-    wire: function () {}
+    }
   };
 })();
 
@@ -1276,20 +1223,17 @@ Demos.log = (function () {
       return msgs;
     },
     tick: null,
-    act: function (a) {
-      if (a === 'replay') { st.step = 0; setTimeout(function () { Shell.step('log', 1); }, 250);
-                            setTimeout(function () { Shell.step('log', 2); }, 2100); return true; }
-      return false;
+    /* Opening the channel plays the chain: an ally is killed, and a beat
+       later the bot adds every killer to the hunted list on its own. It
+       used to be behind a Play button in the control strip; with that gone
+       the channel tells its own story instead of sitting still. */
+    onEnter: function (step) {
+      st.step = 0;
+      step(0);
+      setTimeout(function () { step(1); }, 900);
+      setTimeout(function () { step(2); }, 2800);
     },
-    setStep: function (n) { st.step = n; },
-    controls:
-      row('watch it happen',
-          '<button class="play" data-act="replay">&#9654; Play the chain</button>',
-          'An ally is killed in <b>#deaths</b> &mdash; then the bot adds every killer to the hunted list here, on its own.') +
-      row('/hunted <span class="arg">list</span>',
-          '<span class="legend">nobody ran a command for the yellow ones</span>',
-          'Brand colour means somebody asked. Yellow means the bot decided.'),
-    wire: function () {}
+    setStep: function (n) { st.step = n; }
   };
 })();
 
@@ -1422,46 +1366,12 @@ Demos.spawns = (function () {
       return false;
     },
     setFilter: function (f) { st.filter = f; },
-    toggleOpen: function (code) { st.open = st.open === code ? null : code; },
-    controls:
-      row('claim a respawn',
-          '<span class="legend">open a post, then press <b>Claim</b></span>',
-          'Everything here works. Claim one, then leave it again.') +
-      row('/bookings &middot; /stamina',
-          '<span class="legend">book ahead, and see what your claims are costing you</span>',
-          'The same board is on the web dashboard, for people who would rather not use Discord.'),
-    wire: function () {}
+    toggleOpen: function (code) { st.open = st.open === code ? null : code; }
   };
 })();
 
 /* =====================================================================
-   9. CONTROL-STRIP HELPERS
-   Deliberately in the site's visual language rather than Discord's, so
-   it always reads as "this is the control" and never as part of the
-   product screenshot.
-   ===================================================================== */
-function row(label, control, help) {
-  return '<div class="ctl-row"><span class="ctl-lbl">' + label + '</span>' +
-         control + '<span class="ctl-help">' + help + '</span></div>';
-}
-function slider(id, min, max, step, val) {
-  return '<input type="range" data-ctl="' + id + '" min="' + min + '" max="' + max +
-         '" step="' + step + '" value="' + val + '" aria-label="' + id + '">' +
-         '<span class="val" data-val="' + id + '">' + val + '</span>';
-}
-function seg(id, opts) {
-  return '<span class="seg" data-ctl="' + id + '">' + opts.map(function (o) {
-    return '<button data-v="' + o[0] + '" aria-pressed="' + !!o[2] + '">' + o[1] + '</button>';
-  }).join('') + '</span>';
-}
-function chips(id, opts) {
-  return '<span class="seg chips" data-ctl="' + id + '" data-multi="1">' + opts.map(function (o) {
-    return '<button data-v="' + o[0] + '" aria-pressed="true">' + o[1] + '</button>';
-  }).join('') + '</span>';
-}
-
-/* =====================================================================
-   10. SHELL
+   9. SHELL
    ===================================================================== */
 var Shell = (function () {
   var el = {}, active = 'deaths', timer = null, live = true, atBottom = true;
@@ -1541,16 +1451,7 @@ var Shell = (function () {
       var msgs = d.build();
       el.feed.innerHTML = msgs && msgs.length ? messagesHTML(msgs, flash) : d.empty();
     }
-    el.ctl.innerHTML = d.controls + liveRow(d);
     fallbacks();
-  }
-
-  function liveRow(d) {
-    if (!d.tick) return '';
-    return '<div class="ctl-row">' +
-      '<button class="live" data-ctl="live" data-on="' + live + '"><span class="dot"></span>' +
-      (live ? 'live — updating' : 'paused — click to resume') + '</button>' +
-      '<span class="ctl-help">Autoplay stops the moment you touch a control.</span></div>';
   }
 
   function fallbacks() {
@@ -1579,14 +1480,7 @@ var Shell = (function () {
         if (active.indexOf('online') === 0 || CH[active].nm) sidebar();
       }, active === 'online' || active === 'allies' ? 4000 : 6000);
     }
-    var b = el.ctl.querySelector('[data-ctl="live"]');
-    if (b) {
-      b.dataset.on = String(on);
-      b.innerHTML = '<span class="dot"></span>' + (on ? 'live — updating' : 'paused — click to resume');
-    }
   }
-
-  function touched() { if (live) setLive(false); }
 
   function select(id) {
     if (!CH[id]) return;
@@ -1596,20 +1490,23 @@ var Shell = (function () {
     if (demoFor(id).fromTop) { el.feed.scrollTop = 0; atBottom = false; }
     else { atBottom = true; bottom(); }
     setLive(true);
+
+    var d = demoFor(id);
+    if (d.onEnter) {
+      d.onEnter(function (n) {
+        if (active !== id) return;   /* they navigated away mid-sequence */
+        d.setStep(n);
+        render(n > 0);
+        bottom();
+      });
+    }
   }
 
   return {
-    step: function (id, n) {
-      if (active !== id) return;
-      Demos[id].setStep(n);
-      render(true);
-      bottom();
-    },
     init: function () {
       el.chans = document.getElementById('chans');
       el.strip = document.getElementById('strip');
       el.feed = document.getElementById('feed');
-      el.ctl = document.getElementById('ctl');
       el.name = document.getElementById('chName');
       el.topic = document.getElementById('chTopic');
       el.hash = document.getElementById('chHash');
@@ -1627,52 +1524,17 @@ var Shell = (function () {
         });
       });
 
-      /* Controls */
-      el.ctl.addEventListener('click', function (ev) {
-        var liveBtn = ev.target.closest('[data-ctl="live"]');
-        if (liveBtn) { setLive(!live); return; }
-
-        var play = ev.target.closest('.play');
-        if (play) { touched(); demoFor(active).act(play.dataset.act); return; }
-
-        var b = ev.target.closest('.seg button');
-        if (!b) return;
-        touched();
-        var box = b.closest('.seg');
-        if (box.dataset.multi) {
-          var next = b.getAttribute('aria-pressed') !== 'true';
-          b.setAttribute('aria-pressed', String(next));
-          fire(box.dataset.ctl, b.dataset.v, next);
-        } else {
-          [].forEach.call(box.querySelectorAll('button'), function (x) {
-            x.setAttribute('aria-pressed', String(x === b));
-          });
-          fire(box.dataset.ctl, b.dataset.v, true);
-        }
-      });
-
-      el.ctl.addEventListener('input', function (ev) {
-        var s = ev.target.closest('input[type=range]');
-        if (!s) return;
-        touched();
-        var out = el.ctl.querySelector('[data-val="' + s.dataset.ctl + '"]');
-        if (out) out.textContent = s.value;
-        fire(s.dataset.ctl, s.value, true);
-      });
-
       /* Discord components inside the feed */
       el.feed.addEventListener('click', function (ev) {
         var b = ev.target.closest('[data-act]');
         if (b && !b.disabled) {
-          touched();
           var d = demoFor(active);
           if (d.act && d.act(b.dataset.act)) { render(false); return; }
         }
         var tag = ev.target.closest('.fr-tag');
-        if (tag) { touched(); Demos.spawns.setFilter(tag.dataset.tag); render(false); return; }
+        if (tag) { Demos.spawns.setFilter(tag.dataset.tag); render(false); return; }
         var post = ev.target.closest('.fr-post');
         if (post && !ev.target.closest('.fr-open')) {
-          touched();
           Demos.spawns.toggleOpen(post.dataset.spawn);
           render(false);
         }
@@ -1682,20 +1544,6 @@ var Shell = (function () {
     }
   };
 
-  function fire(id, value, pressed) {
-    var d = demoFor(active);
-    var handled = false;
-    d.wire(function (want, fn) {
-      if (want === id) { fn(value, pressed); handled = true; }
-    });
-    if (id === 'o-mode') {
-      active = value === 'combined' ? 'online' : 'allies';
-      sidebar();
-    }
-    render(false);
-    if (demoFor(active).fromTop) el.feed.scrollTop = 0;
-    else bottom();
-  }
 })();
 
 document.addEventListener('DOMContentLoaded', function () { Shell.init(); });

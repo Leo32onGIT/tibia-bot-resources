@@ -120,7 +120,7 @@
   padding: 0 14px; color: var(--dc-strong); font-weight: 600; font-size: 15px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); cursor: default;
 }
-.dc-guild .caret { margin-left: auto; color: var(--dc-inter); font-size: 11px; }
+.dc-guild .dc-caret { margin-left: auto; color: var(--dc-inter); font-size: 11px; }
 
 .dc-chans { flex: 1; overflow-y: auto; padding: 8px 8px 20px; }
 .dc-cat {
@@ -184,8 +184,8 @@
 }
 .emb .in { padding: 8px 16px 16px 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 .emb .body { min-width: 0; }
-.emb .ti { font-size: 16px; font-weight: 600; color: var(--dc-link); margin-bottom: 4px; line-height: 1.375; }
-.emb .ti.plain { color: var(--dc-strong); }
+.emb .etitle { font-size: 16px; font-weight: 600; color: var(--dc-link); margin-bottom: 4px; line-height: 1.375; }
+.emb .etitle.plain { color: var(--dc-strong); }
 .emb .de { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
 .emb .th {
   width: 80px; height: 80px; object-fit: contain; border-radius: 3px;
@@ -229,7 +229,7 @@
 /* Discord draws emoji in an embed title a shade larger than body text. The
    fixtures carry plain shortcodes, so the size belongs here rather than in a
    variant the caller has to remember to ask for. */
-.emb .ti .e { width: 1.3em; height: 1.3em; vertical-align: -0.25em; }
+.emb .etitle .e { width: 1.3em; height: 1.3em; vertical-align: -0.25em; }
 
 /* --------------------------------------------------------------- buttons */
 .dc-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; max-width: 440px; }
@@ -353,7 +353,7 @@
   .msg .who { font-size: 14px; }
   .emb, .dc-row { max-width: 100%; }
   .emb .in { padding: 8px 12px 12px 10px; gap: 8px; }
-  .emb .ti { font-size: 15px; }
+  .emb .etitle { font-size: 15px; }
   .emb .de, .dc-md { font-size: 13.5px; }
   .emb .th { width: 56px; height: 56px; }
   .emb .fields { grid-template-columns: repeat(2, 1fr); }
