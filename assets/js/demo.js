@@ -35,6 +35,9 @@ var UNI = {
   link:           ['1f517', '🔗'],
   green_circle:   ['1f7e2', '🟢'],
   yellow_circle:  ['1f7e1', '🟡'],
+  calendar:       ['1f4c5', '📅'],
+  globe:          ['1f310', '🌐'],
+  pushpin:        ['1f4cc', '📌'],
   scissors:       ['2702',  '✂️']
 };
 
@@ -1351,6 +1354,29 @@ Demos.spawns = (function () {
     return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ap;
   }
 
+  /* The pinned board post, from respawn/RespawnThreads.postBoard: one
+     forum thread called "Respawn Claims", pinned, carrying the intro and
+     the four ways into the system. It is what makes the feature usable
+     before any spawn has a post of its own — a spawn nobody has claimed
+     yet has no card to put a Claim button on, so the board carries one.
+
+     The real post also holds a generated PNG of the whole code table
+     (respawn/RespawnBoardImage). That is rendered per server from its own
+     catalogue, so there is nothing honest to put in its place here. */
+  var BOARD = {
+    title: ':calendar: Respawn Claims',
+    intro: '<:daily:> **Claim** **·** and type a code to claim a spawn right now\n' +
+           ':calendar: **Book** **·** to schedule/lock-in a hunt in the future (up to 12h)\n' +
+           ':globe: **Dashboard** **·** if you want to book further in advance (webui)\n' +
+           ':gear: **Config** **·** to change your default claim time & reminder settings',
+    buttons: [
+      { style: 'success', label: 'Claim', emoji: 'daily' },
+      { style: 'secondary', label: 'Book', emoji: 'calendar' },
+      { style: 'secondary', label: 'Dashboard', emoji: 'globe' },
+      { style: 'secondary', label: 'Config', emoji: 'gear' }
+    ]
+  };
+
   return {
     ch: 'spawns',
     forum: true,
@@ -1380,6 +1406,24 @@ Demos.spawns = (function () {
         '<button class="fr-tag" data-tag="claimed" aria-pressed="' + (st.filter === 'claimed') + '">' +
           '<span class="dot" style="background:#da373c"></span>Claimed</button>' +
         '<span class="fr-count">' + free + ' free of ' + SPAWNS.length + '</span></div>';
+
+      /* Pinned: Discord floats it above everything else in the forum. */
+      var boardOpen = st.open === 'board';
+      var board = '<div class="fr-post pinned" data-spawn="board" aria-expanded="' + boardOpen + '">' +
+        '<div>' +
+          '<span class="pin">' + uni('pushpin') + ' Pinned</span>' +
+          '<div class="pt">' + md(BOARD.title, 0) + '</div>' +
+          '<div class="pm">Violent Bot · every respawn code is on this post</div>' +
+        '</div>' +
+        '<img class="pic" src="assets/img/avatar.png" alt="" data-fb="">' +
+        (boardOpen
+          ? '<div class="fr-open">' +
+              embedHTML({ color: C.purple, title: 'Respawn Claims', desc: BOARD.intro,
+                          thumb: 'assets/img/avatar.png' }, 0) +
+              buttonsHTML(BOARD.buttons) +
+            '</div>'
+          : '') +
+        '</div>';
 
       var list = shown.map(function (s) {
         var c = st.claims[s.code];
@@ -1431,7 +1475,7 @@ Demos.spawns = (function () {
       if (!shown.length) {
         list = '<div class="dc-empty"><b>Nothing here.</b><br>No respawn matches that tag right now.</div>';
       }
-      return bar + '<div class="fr-list">' + list + '</div>';
+      return bar + '<div class="fr-list">' + board + list + '</div>';
     },
     tick: null,
     act: function (a) {
