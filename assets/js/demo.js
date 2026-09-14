@@ -77,7 +77,14 @@ var CUSTOM = {
      square middles and a rounded end, three shapes per colour. */
   green_start: 'green_start', green_mid: 'green_mid', green_end: 'green_end',
   red_start:   'red_start',   red_mid:   'red_mid',   red_end:   'red_end',
-  empty_start: 'empty_start', empty_mid: 'empty_mid', empty_end: 'empty_end'
+  empty_start: 'empty_start', empty_mid: 'empty_mid', empty_end: 'empty_end',
+  /* statistics/SpecialKills — the quest bosses the daily post calls out by
+     name on the day they die. All five are animated. */
+  plunder:    'plunder.gif',    /* <a:plunder:1547928770554372096>    */
+  phosphorus: 'phosphorus.gif', /* <a:phosphorus:1547928790653607956> */
+  soulwar:    'soulwar.gif',    /* <a:soulwar:1547928746189918258>    */
+  bakragore:  'bakragore.gif',  /* <a:bakragore:1547928812388622366>  */
+  primal:     'primal.gif'      /* <a:primal:1548281927155458099>     */
 };
 var EMOJI_DIR = 'assets/img/emoji/';
 
@@ -1108,8 +1115,16 @@ Demos.stats = (function () {
       '**64,018** [Burster Spectres](#)',
       '**41,330** [Grim Reapers](#)',
       '## <:gold:> Special Kills',
-      '**12** [Soul War bosses](#)',
-      '**3** [Plunder Patriarchs](#)'
+      /* statistics/SpecialKills.all, with StatisticsEmbeds.creatureStats'
+         row shape: the emoji leads, then the count, then the name.
+         `nameFor` switches to the plural only where the boss has a
+         different word for it — Phosphorus and Goshnar's Megalomania are
+         one named boss however many died, and the endpoint's spelling of
+         the plural really is "Patriarches". */
+      '<a:plunder:> **7** [Plunder Patriarches](#)',
+      "<a:soulwar:> **2** [Goshnar's Megalomania](#)",
+      '<a:bakragore:> **3** [Bakragores](#)',
+      '<a:primal:> **1** [The Primal Menace](#)'
     ];
 
     /* presentation/BossPredictionEmbeds — which bosses history says could
