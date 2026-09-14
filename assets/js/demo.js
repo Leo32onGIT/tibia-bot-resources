@@ -1131,7 +1131,7 @@ Demos.notify = (function () {
             desc: 'The boosted creature today is:\n### <:indent:><:levelup:> **[Death Blob](#)**' },
           { color: C.brand, thumb: creatureImg('Rashid'),
             desc: 'Today Rashid can be found in:\n### <:indent:><:gold:> **[Carlin](#)**' },
-          { color: C.brand, thumb: creatureImg('Dream_Scar'),
+          { color: C.brand, thumb: creatureImg('Izcandar_the_Banished'),
             desc: 'The Dream Courts boss for **' + WORLD + '** is:\n### <:indent:><a:dreamscar:> **[Izcandar the Banished](#)**' },
           { color: C.brand, thumb: creatureImg('Phant'),
             desc: 'The current Drome cycle will end:\n### <:indent:><:drome:> <t:190000:R>' }

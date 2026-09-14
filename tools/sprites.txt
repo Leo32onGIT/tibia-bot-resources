@@ -12,7 +12,6 @@ Death_Blob
 Demon_Skeleton
 Destroyer
 Dragon_Lord
-Dream_Scar
 Falcon_Knight
 Ferumbras
 Flimsy_Lost_Soul
@@ -27,6 +26,7 @@ Hellflayer
 Hellhound
 Hydra
 Infernalist
+Izcandar_the_Banished
 Juggernaut
 Lava_Golem
 Lavafungus
