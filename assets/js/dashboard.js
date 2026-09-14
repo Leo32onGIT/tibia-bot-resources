@@ -154,9 +154,37 @@ function hhmm(hours) {
   return pad(Math.floor(total / 60)) + ':' + pad(total % 60);
 }
 
-/* Tibia's server save. Drawn where it falls, because a booking either
-   side of it is a different night. */
+/* Tibia's server save: 10:00 in Berlin, wherever the reader happens to
+   be. Drawn where that instant actually falls on their own day, because a
+   booking either side of it is a different night — and a fixed 10:00 on a
+   local axis is simply the wrong line for everyone outside one timezone. */
+var SERVER_TZ = 'Europe/Berlin';
 var SERVER_SAVE_HOUR = 10;
+
+/* How far ahead of UTC the server's clock is at a given instant, which
+   changes twice a year. Read out of Intl rather than assumed, so the line
+   moves with Berlin's own daylight saving rather than with a constant. */
+function serverOffsetMinutes(date) {
+  var parts = {};
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: SERVER_TZ, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).formatToParts(date).forEach(function (x) { parts[x.type] = x.value; });
+  var asUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day,
+                       +parts.hour % 24, +parts.minute, +parts.second);
+  return (asUTC - Math.floor(date.getTime() / 1000) * 1000) / 60000;
+}
+
+/* The instant at which the server's clock reads this wall time. Two passes,
+   because the offset that answers the question depends on the answer. */
+function serverToInstant(y, mo, d, h, mi) {
+  var guess = new Date(Date.UTC(y, mo, d, h, mi));
+  for (var i = 0; i < 2; i++) {
+    guess = new Date(Date.UTC(y, mo, d, h, mi) - serverOffsetMinutes(guess) * 60000);
+  }
+  return guess;
+}
 
 /* A deterministic evening. Hunts cluster where people are awake, so a
    week of uniformly random blocks reads as noise rather than as a rota. */
@@ -208,10 +236,17 @@ function bookingsFor(code, row) {
    Blocks are placed against the hour rather than in pixels: --at is hours
    from midnight and --len is how many it runs for, so the CSS does the
    arithmetic exactly as the real grid does. */
+/* board.html opens on OPEN_FROM = -1 through OPEN_TO = 13 — yesterday and
+   a fortnight ahead, fifteen columns. Seven filled about half the panel
+   and left the rest empty; the strip is meant to run on past the edge and
+   be scrolled, which is the whole reason a day is a fixed width rather
+   than a seventh of the panel. */
+var OPEN_FROM = -1, OPEN_TO = 13;
+
 function weekHTML(s, row) {
   var now = new Date();
   var days = [];
-  for (var d = 0; d < 7; d++) {
+  for (var d = OPEN_FROM; d <= OPEN_TO; d++) {
     var date = new Date(now.getTime() + d * 86400000);
     days.push({
       name: DAY_NAMES[(date.getDay() + 6) % 7],
@@ -219,7 +254,8 @@ function weekHTML(s, row) {
       /* The first of a month says which month, so a strip scrolled a long
          way forward is never a run of bare numbers. */
       month: date.getDate() === 1 ? date.toLocaleDateString(undefined, { month: 'short' }) : '',
-      today: d === 0
+      today: d === 0,
+      offset: d
     });
   }
 
@@ -238,13 +274,30 @@ function weekHTML(s, row) {
   }
 
   var blocks = bookingsFor(s.code, row);
-  var cols = days.map(function (day, index) {
+  var cols = days.map(function (day) {
+    var dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + day.offset);
+    var colStart = dayStart.getTime(), colEnd = colStart + 86400000;
+
     var cells = '';
     for (var c = 0; c < 24; c++) {
-      var past = index === 0 && c + 1 <= now.getHours();
+      var past = colStart + (c + 1) * 3600000 <= Date.now();
       cells += '<div class="wk-cell' + (past ? ' past' : '') + '"></div>';
     }
-    var placed = blocks.filter(function (b) { return b.day === index; }).map(function (b) {
+
+    /* Server save, drawn where the server's 10:00 actually falls on this
+       local day — which is a different hour, and occasionally a different
+       day, depending on where the reader is. */
+    var ss = serverToInstant(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate(),
+                             SERVER_SAVE_HOUR, 0);
+    var ssMark = '';
+    if (ss.getTime() >= colStart && ss.getTime() < colEnd) {
+      var ssAt = (ss.getTime() - colStart) / 3600000;
+      ssMark = '<div class="ss-line" style="--at:' + ssAt + '"></div>' +
+               '<div class="ss-label" style="--at:' + ssAt + '">SS ' +
+                 pad(ss.getHours()) + ':' + pad(ss.getMinutes()) + '</div>';
+    }
+
+    var placed = blocks.filter(function (b) { return b.day === day.offset; }).map(function (b) {
       /* HH:MM either side, as board.html writes it. Flooring to the hour
          labelled a 5:41-to-7:41 hunt "5am to 7am" — a block drawn in the
          right place saying the wrong time. */
@@ -256,7 +309,7 @@ function weekHTML(s, row) {
                '<span class="tm">' + from + '–' + to + '</span>' +
              '</div>';
     }).join('');
-    return '<div class="wk-col">' + cells + placed + '</div>';
+    return '<div class="wk-col">' + cells + ssMark + placed + '</div>';
   }).join('');
 
   var nowAt = now.getHours() + now.getMinutes() / 60;
@@ -293,8 +346,6 @@ function weekHTML(s, row) {
               '<span class="now-flag" style="--at:' + nowAt + '">' +
                 pad(now.getHours()) + ':' + pad(now.getMinutes()) + '</span>' +
             '</div>' + cols +
-            '<div class="ss-line" style="--at:' + SERVER_SAVE_HOUR + '"></div>' +
-            '<div class="ss-label" style="--at:' + SERVER_SAVE_HOUR + '">SERVER SAVE</div>' +
             '<div class="now-line" style="--at:' + nowAt + '"></div>' +
           '</div>' +
         '</div>' +
@@ -344,8 +395,13 @@ function renderWindow() {
      says "being hunted now" reads as two views of different spawns. */
   var week = document.getElementById('db-week');
   if (week) {
-    var at = row.state === 'free' ? 16 : row.start / 60;
+    var at = row.state === 'free' ? 16 : (row.start % 1440) / 60;
     week.scrollTop = Math.max(0, (at - 1.5) * 28);
+    /* Sideways to today, which is the second column — the strip opens on
+       yesterday so there is somewhere to look back to, but nobody books
+       into it. */
+    var col = parseFloat(getComputedStyle(week.querySelector('.wk-grid')).getPropertyValue('--daycol')) || 150;
+    week.scrollLeft = col * (-OPEN_FROM);
   }
 
   /* board.html's readout: the length on the left, the one action on the
@@ -380,8 +436,10 @@ function renderWindow() {
           '</span>' +
           '<span class="tank-edge" style="left:' + (spent + hunt) + '%"></span>' +
           '<span class="tank-in" style="left:' + (spent + 4) + '%">3hr</span>' +
-          '<span class="tank-out" style="left:' + (spent + hunt + 3) + '%">' +
-            clockTime(nowMinutes() + 180) + '</span>' +
+          /* What the tank would have left afterwards — of the tank, not of
+             this control's range. Anchored to the tail of the bar and left
+             there: it stays put and lets the blue arrive underneath it. */
+          '<span class="tank-out">2hr30m left</span>' +
         '</span>' +
       '</div>' +
       '<div class="readout-actions">' +
@@ -392,10 +450,6 @@ function renderWindow() {
     '</div>';
 }
 
-function nowMinutes() {
-  var n = new Date();
-  return n.getHours() * 60 + n.getMinutes();
-}
 
 function openWindow(code) {
   open = code;

@@ -196,9 +196,14 @@
   overscroll-behavior: contain;
 }
 .db-window.open { display: flex; flex-direction: column; }
+/* board.html's watermark: the whole panel, not a corner. object-position
+   sits it just above centre so the head of a creature lands behind the
+   grid rather than behind the footer. */
 .db-window .watermark {
-  position: absolute; right: -14px; top: -10px; width: 190px; height: 190px;
-  opacity: 0.1; image-rendering: pixelated; object-fit: contain; pointer-events: none;
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; object-position: center 46%;
+  image-rendering: pixelated; pointer-events: none; user-select: none;
+  opacity: 0.09; filter: saturate(0.85);
 }
 .db-window .win-head {
   position: relative; display: flex; align-items: center; gap: 9px;
@@ -252,7 +257,7 @@
   font-family: var(--mono); font-variant-numeric: tabular-nums;
 }
 .db .tank-in { font-size: 12.5px; font-weight: 600; color: #06122e; }
-.db .tank-out { font-size: 10.5px; color: var(--muted); }
+.db .tank-out { font-size: 10.5px; color: var(--muted); right: 7px; }
 
 .db .btn {
   background: var(--accent); border: 1px solid var(--accent); border-radius: 6px;
@@ -321,10 +326,10 @@
 }
 .db .wk-grid {
   position: relative; width: max-content;
-  --gutter: 56px; --daycol: 140px; --row: 28px; --min-block: 13px;
+  --gutter: 56px; --daycol: 150px; --row: 28px; --min-block: 13px;
 }
 .db .wk-headrow,
-.db .wk-rows { display: grid; grid-template-columns: var(--gutter) repeat(7, var(--daycol)); }
+.db .wk-rows { display: grid; grid-template-columns: var(--gutter) repeat(15, var(--daycol)); }
 .db .wk-headrow { position: sticky; top: 0; z-index: 7; background: var(--panel); }
 .db .wk-rows { position: relative; }
 
@@ -397,7 +402,7 @@
 .db .ss-label {
   position: absolute; right: 3px; top: calc(var(--row) * var(--at, 0)); transform: translateY(-100%);
   font-family: var(--mono); font-size: 8px; color: var(--warn); opacity: 0.9;
-  letter-spacing: 0.08em; pointer-events: none;
+  letter-spacing: 0.08em; pointer-events: none; z-index: 3;
 }
 .db .now-line {
   position: absolute; left: 0; right: 0; height: 0; z-index: 4; pointer-events: none;
@@ -429,7 +434,9 @@
   .db .tank-out { font-size: 11px; }
   .db-filter { margin-left: 0; flex: 1 1 100%; }
   .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
-  .db .wk-grid { --daycol: 112px; --gutter: 46px; }
+  /* A fifteenth of a phone is nothing. The columns keep a width worth
+     reading and the strip slides sideways for the rest of itself. */
+  .db .wk-grid { --gutter: 30px; --daycol: calc((100vw - 6px - 30px) / 4); }
   .db .wk-body { max-height: 240px; }
   .db .cal-legend span:nth-child(n+5) { display: none; }
   .db .cc-week { margin-left: 0; }
