@@ -205,6 +205,17 @@
   image-rendering: pixelated; pointer-events: none; user-select: none;
   opacity: 0.09; filter: saturate(0.85);
 }
+/* What keeps the art from reading as a picture behind a calendar. board.html
+   lays this over the watermark: a dark radial that is nearly clear at the
+   middle and closes in towards the edges, so the sprite surfaces in the
+   centre of the window and sinks everywhere else. The window's own head and
+   body are positioned, so they paint above it and stay crisp. */
+.db-window .scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 45%, rgba(18, 21, 28, 0.12) 0%, rgba(18, 21, 28, 0.7) 62%, rgba(18, 21, 28, 0.93) 100%),
+    linear-gradient(rgba(18, 21, 28, 0.55), rgba(18, 21, 28, 0.18) 30%, rgba(18, 21, 28, 0.75));
+}
 .db-window .win-head {
   position: relative; display: flex; align-items: center; gap: 9px;
   padding: 13px 15px; border-bottom: 1px solid var(--panel-border);
@@ -219,7 +230,16 @@
   font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; flex: none;
 }
 .db-window .win-close:hover { color: var(--text-strong); }
-.db-window .win-body { position: relative; padding: 0; overflow-y: auto; flex: 1; }
+.db-window .win-body {
+  position: relative; padding: 0; overflow-y: auto; flex: 1;
+  scrollbar-width: thin; scrollbar-color: #2a3140 transparent;
+}
+.db-window .win-body::-webkit-scrollbar { width: 10px; }
+.db-window .win-body::-webkit-scrollbar-track { background: transparent; }
+.db-window .win-body::-webkit-scrollbar-thumb {
+  background: #2a3140; border-radius: 5px;
+  border: 3px solid var(--panel); background-clip: padding-box;
+}
 .db-window .win-foot { position: relative; flex-shrink: 0; }
 
 /* The readout: the length on the left, the one action on the right. Its
@@ -244,20 +264,18 @@
   position: absolute; inset: 5px; border-radius: 4px;
   background: rgba(255, 255, 255, 0.05); overflow: hidden; display: flex;
 }
-.db .tank-spent { background: rgba(124, 134, 152, 0.3); }
 .db .tank-hunt { background: var(--accent); }
 .db .tank-edge {
   position: absolute; top: 3px; bottom: 3px; width: 3px; border-radius: 2px;
   background: var(--text-strong); box-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
   z-index: 2; pointer-events: none;
 }
-.db .tank-in, .db .tank-out {
+.db .tank-in {
   position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
   white-space: nowrap; pointer-events: none;
   font-family: var(--mono); font-variant-numeric: tabular-nums;
 }
 .db .tank-in { font-size: 12.5px; font-weight: 600; color: #06122e; }
-.db .tank-out { font-size: 10.5px; color: var(--muted); right: 7px; }
 
 .db .btn {
   background: var(--accent); border: 1px solid var(--accent); border-radius: 6px;
@@ -318,8 +336,12 @@
 .db .line-now { border: none; border-left: 2px solid var(--bad); border-radius: 0; width: 2px; }
 .db .line-ss { border: none; border-left: 2px dashed var(--warn); border-radius: 0; width: 2px; }
 
-.db .wk-body { overflow: auto; max-height: calc(100vh - 340px); min-height: 260px; touch-action: pan-x pan-y; }
+.db .wk-body {
+  overflow: auto; max-height: calc(100vh - 340px); min-height: 260px; touch-action: pan-x pan-y;
+  scrollbar-width: thin; scrollbar-color: #2a3140 transparent;
+}
 .db .wk-body::-webkit-scrollbar { width: 10px; height: 10px; }
+.db .wk-body::-webkit-scrollbar-track { background: transparent; }
 .db .wk-body::-webkit-scrollbar-thumb {
   background: #2a3140; border-radius: 5px;
   border: 3px solid var(--panel); background-clip: padding-box;
@@ -431,7 +453,6 @@
   .db .foot-dur { flex: 1 1 auto; }
   .db .foot-dur .tank { width: auto; flex: 1; height: 40px; }
   .db .tank-in { font-size: 13px; }
-  .db .tank-out { font-size: 11px; }
   .db-filter { margin-left: 0; flex: 1 1 100%; }
   .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
   /* A fifteenth of a phone is nothing. The columns keep a width worth

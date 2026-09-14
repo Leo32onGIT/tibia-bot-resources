@@ -421,25 +421,21 @@ function renderWindow() {
   else if (live) { label = 'Book next'; cls = 'btn'; }
   else { label = 'Claim'; cls = 'btn claim'; }
 
-  /* The tank: how long the hunt would run. Grey is what the reader has
-     already spent of their stamina today, blue is what this hunt would
-     take, and the white edge is where it would end. */
-  var spent = 22, hunt = 46;
+  /* How long the hunt would run. The real tank also shades off what today's
+     stamina has already gone on, and closes with what would be left after;
+     here the reader has spent none, so neither has anything to say and the
+     control is left to the one thing it is being shown for. */
+  var hunt = 46;
   el.winFoot.innerHTML =
     '<div class="readout">' +
       '<div class="foot-dur">' +
         '<span class="field-label">For</span>' +
         '<span class="tank" role="slider" tabindex="0" aria-label="How long">' +
           '<span class="tank-zones">' +
-            '<span class="tank-spent" style="width:' + spent + '%"></span>' +
             '<span class="tank-hunt" style="width:' + hunt + '%"></span>' +
           '</span>' +
-          '<span class="tank-edge" style="left:' + (spent + hunt) + '%"></span>' +
-          '<span class="tank-in" style="left:' + (spent + 4) + '%">3hr</span>' +
-          /* What the tank would have left afterwards — of the tank, not of
-             this control's range. Anchored to the tail of the bar and left
-             there: it stays put and lets the blue arrive underneath it. */
-          '<span class="tank-out">2hr30m left</span>' +
+          '<span class="tank-edge" style="left:' + hunt + '%"></span>' +
+          '<span class="tank-in" style="left:4%">3hr</span>' +
         '</span>' +
       '</div>' +
       '<div class="readout-actions">' +
