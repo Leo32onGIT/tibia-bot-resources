@@ -252,6 +252,25 @@
 
 /* ----------------------------------------------------------------- emoji */
 .e { width: 1.2em; height: 1.2em; vertical-align: -0.22em; margin: 0 0.02em; }
+
+/* Bar segments butt together. The default emoji margin leaves a hairline
+   between the colours, and the start/mid/end shapes exist precisely so
+   the run reads as one solid bar rather than a row of blocks. The images
+   are emitted with no whitespace between them, so zeroing the margin is
+   all that is needed — but the vertical-align has to be consistent or the
+   ends sit a pixel off the middles. */
+.e.barseg {
+  margin: 0; width: 1.35em; height: 1.35em;
+  vertical-align: -0.3em; image-rendering: auto;
+}
+
+/* Discord tints a rendered <t:…> so it reads as a value the client worked
+   out, not as words the author typed. */
+.dc-ts {
+  background: rgba(120, 125, 140, 0.24);
+  border-radius: 3px;
+  padding: 0 2px;
+}
 .e.big { width: 1.35em; height: 1.35em; vertical-align: -0.28em; }
 /* Discord draws emoji in an embed title a shade larger than body text. The
    fixtures carry plain shortcodes, so the size belongs here rather than in a

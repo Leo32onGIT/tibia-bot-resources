@@ -98,7 +98,11 @@ function custom(name) {
   if (!f) return '';
   /* Animated server emoji keep their own extension; everything else is a png. */
   var file = f.indexOf('.') > -1 ? f : f + '.png';
-  return '<img class="e" src="' + EMOJI_DIR + file + '" alt="" data-fb="">';
+  /* A bar segment is drawn flush against its neighbours — the default
+     emoji margin leaves a hairline between the colours, and the whole
+     point of the start/mid/end shapes is that the run reads as one bar. */
+  var bar = /^(green|red|empty)_(start|mid|end)$/.test(name) ? ' barseg' : '';
+  return '<img class="e' + bar + '" src="' + EMOJI_DIR + file + '" alt="" data-fb="">';
 }
 
 /* presentation/Emojis.scala — vocation resolved by its last word, so
@@ -149,9 +153,10 @@ function md(text, ago) {
        negative that far behind  -> "3 hours ago" */
   s = s.replace(/&lt;t:(-?\d+):R&gt;/g, function (_, n) {
     var off = parseInt(n, 10);
-    if (off > 0) return relFuture(off);
-    if (off < 0) return rel(-off);
-    return rel(ago);
+    var text = off > 0 ? relFuture(off) : off < 0 ? rel(-off) : rel(ago);
+    /* Discord tints a rendered timestamp so it reads as a value the client
+       computed rather than as words the author typed. */
+    return '<span class="dc-ts">' + text + '</span>';
   });
   s = s.replace(/&lt;a?:([a-z_]+):\d*&gt;/g, function (_, n) { return custom(n); });
   s = s.replace(/:([a-z_]+):/g, function (m0, n) { return UNI[n] ? uni(n) : m0; });
@@ -396,7 +401,7 @@ function sideIcon(c) {
 /* The guild line a death embed opens with (TibiaBot.scala:1124). */
 function guildLine(c) {
   if (!c.guild) return '';
-  return sideIcon(c) + ' *' + c.rank + '* of the [' + c.guild + '](#)\n';
+  return sideIcon(c) + ' *' + c.rank + '* of the [' + c.guild + '](#features)\n';
 }
 
 /* A killer's level, banded around the victim's. A level-57 victim killed
@@ -424,6 +429,9 @@ function clock(ago) {
 }
 
 function embedHTML(e, ago) {
+  /* A grouped embed keeps its OWN timestamp: Discord resolves every
+     <t:…> against now, not against the message header it sits under. */
+  if (e.tsAgo != null) ago = e.tsAgo;
   var body = '';
   if (e.title) {
     body += '<div class="etitle' + (e.plain ? ' plain' : '') + '">' + md(e.title, ago) + '</div>';
@@ -647,7 +655,7 @@ Demos.deaths = (function () {
       }
       if (!ks.length) ks.push(charAt(i + 3));
       var parts = ks.map(function (x) {
-        return '**[' + x.name + ' [' + killerLevel(r, lvl) + ']](#)**';
+        return '**[' + x.name + ' [' + killerLevel(r, lvl) + ']](#features)**';
       });
       killers = parts.length === 1 ? parts[0]
               : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
@@ -683,10 +691,23 @@ Demos.deaths = (function () {
   function fx(i) { if (!pool[i]) pool[i] = make(i); return pool[i]; }
 
   var posted = [];
+
+  /* The whole visible feed is under two minutes old.
+     Violent Bot posts a death about as fast as it can see one, so a
+     channel showing "11 hours ago" reads as a log rather than as a feed
+     that is watching the server right now. Spacing is 5-10s, so eleven
+     rows span roughly 5s to 75s with the average around 40 — which is
+     what detection actually costs. */
+  var SPREAD = { min: 5, gapMin: 5, gapMax: 10, keep: 11 };
+
   (function seed() {
-    var t = 5400;
-    for (var i = 0; i < 11; i++) { posted.push({ i: i, ago: t }); t -= Math.round(t * 0.19) + 90; }
-    cursor = 11;
+    var r = rng(515151);
+    var t = SPREAD.min;
+    for (var i = SPREAD.keep - 1; i >= 0; i--) {
+      posted.unshift({ i: i, ago: t });
+      t += between(r, SPREAD.gapMin, SPREAD.gapMax);
+    }
+    cursor = SPREAD.keep;
   })();
 
   function visible(p) {
@@ -712,9 +733,9 @@ Demos.deaths = (function () {
         }
         var e = {
           color: f.col, title: vc(f.voc) + ' ' + f.name + ' ' + vc(f.voc),
-          desc: d, thumb: f.thumb
+          desc: d, thumb: f.thumb, tsAgo: p.ago
         };
-        if (last && count < 3 && Math.abs(last.ago - p.ago) < 420) { last.embeds.push(e); count++; }
+        if (last && count < 4 && Math.abs(last.ago - p.ago) < 26) { last.embeds.push(e); count++; }
         else { last = { ago: p.ago, embeds: [e] }; out.push(last); count = 1; }
       });
       return out;
@@ -724,9 +745,12 @@ Demos.deaths = (function () {
              'Every death on the server right now is below level ' + st.min + '.</div>';
     },
     tick: function () {
+      /* Ages by exactly the tick interval, so the oldest row on screen
+         stays inside the window the seed established rather than drifting
+         into hours over a long visit. */
       posted.forEach(function (p) { p.ago += 6; });
-      posted.push({ i: cursor++, ago: 2 });
-      if (posted.length > 15) posted.shift();
+      posted.push({ i: cursor++, ago: SPREAD.min });
+      while (posted.length > SPREAD.keep) posted.shift();
     }
   };
 })();
@@ -775,7 +799,7 @@ Demos.levels = (function () {
       var out = [], last = null, count = 0;
       shown.forEach(function (p) {
         var f = fx(p.i);
-        var line = vc(f.voc) + ' **[' + f.name + '](#)** advanced to <:levelup:> level **' +
+        var line = vc(f.voc) + ' **[' + f.name + '](#features)** advanced to <:levelup:> level **' +
                    f.lvl + '**' + (f.icon ? ' ' + f.icon : '');
         if (last && count < 7 && Math.abs(last.ago - p.ago) < 400) {
           last.text += '\n' + line; count++;
@@ -832,14 +856,14 @@ Demos.activity = (function () {
     var label = c.side === 'ally' ? 'allied' : c.side === 'enemy' ? 'hunted' : 'neutral';
     var g = c.guild || pick(r, GUILDS.neutral);
 
-    var lead = vc(c.voc) + ' **' + lvl + '** — **[' + c.name + '](#)**';
+    var lead = vc(c.voc) + ' **' + lvl + '** — **[' + c.name + '](#features)**';
     var desc;
-    if (kind === 'join')       desc = lead + ' joined the **' + label + '** guild **[' + g + '](#)**.';
-    else if (kind === 'leave') desc = lead + ' has left the **' + label + '** guild **[' + g + '](#)**.';
+    if (kind === 'join')       desc = lead + ' joined the **' + label + '** guild **[' + g + '](#features)**.';
+    else if (kind === 'leave') desc = lead + ' has left the **' + label + '** guild **[' + g + '](#features)**.';
     else if (kind === 'swap')  desc = lead + ' has left the **' + label + '** guild **[' + g +
-                                      '](#)** and joined the guild **[' + pick(r, GUILDS.neutral) + '](#)**.';
+                                      '](#features)** and joined the guild **[' + pick(r, GUILDS.neutral) + '](#features)**.';
     else if (kind === 'rename') {
-      desc = lead + ' changed their **name** to **[' + pick(r, NEW_NAMES) + '](#)**.';
+      desc = lead + ' changed their **name** to **[' + pick(r, NEW_NAMES) + '](#features)**.';
     } else {
       desc = lead + ' transferred in from **' + pick(r, OTHER_WORLDS) + '**.';
     }
@@ -863,7 +887,7 @@ Demos.activity = (function () {
       var out = [], last = null, count = 0;
       shown.forEach(function (p) {
         var f = fx(p.i);
-        var e = { color: f.col, desc: f.desc, thumb: f.thumb };
+        var e = { color: f.col, desc: f.desc, thumb: f.thumb, tsAgo: p.ago };
         if (last && count < 3 && Math.abs(last.ago - p.ago) < 900) { last.embeds.push(e); count++; }
         else { last = { ago: p.ago, embeds: [e] }; out.push(last); count = 1; }
       });
@@ -912,7 +936,7 @@ Demos.online = (function () {
   function line(p) {
     var masslog = p.side === 'enemy' && p.dur < 600 ? ' :zap:'
                 : p.side === 'enemy' && p.dur > 18000 ? ' :zzz:' : '';
-    return vc(p.voc) + ' **' + p.lvl + '** — **[' + p.name + '](#)** ' +
+    return vc(p.voc) + ' **' + p.lvl + '** — **[' + p.name + '](#features)** ' +
            sideIcon(p) + ' ' + duration(p.dur) +
            (p.levelled ? ' <:levelup:>' : '') + masslog;
   }
@@ -951,7 +975,7 @@ Demos.online = (function () {
           if (named.indexOf(g) < 0) loose = loose.concat(byGuild[g]);
         });
         named.forEach(function (g) {
-          parts.push('### [' + g + '](#) ' + byGuild[g].length);
+          parts.push('### [' + g + '](#features) ' + byGuild[g].length);
           parts = parts.concat(byGuild[g].map(line));
         });
         if (loose.length) {
@@ -984,7 +1008,7 @@ Demos.stats = (function () {
   /* presentation/StatLines.who — vocation, linked name, side icon. */
   function who(c) {
     var icon = sideIcon(c);
-    return vc(c.voc) + ' **[' + c.name + '](#)**' + (icon ? ' ' + icon : '');
+    return vc(c.voc) + ' **[' + c.name + '](#features)**' + (icon ? ' ' + icon : '');
   }
   /* presentation/StatLines.Dot */
   var DOT = ' · ';
@@ -1078,7 +1102,7 @@ Demos.stats = (function () {
   }
 
   function build() {
-    var lines = ['## <a:news:> [' + day + '](#)', '### Top Experience Gained'];
+    var lines = ['## <a:news:> [' + day + '](#features)', '### Top Experience Gained'];
     board.gains.forEach(function (g) {
       lines.push(cells(who(g.c), '*' + g.c.level + '*',
                        XP_UP + ' **' + g.xp.toLocaleString('en-US') + '**'));
@@ -1106,14 +1130,14 @@ Demos.stats = (function () {
     pvp.push('### Most Deaths');
     pvp.push(cells(who(board.repeat), '*' + board.repeat.level + '*', '**3 deaths**'));
     pvp.push('### Top Enemy Killed');
-    pvp.push(cells(who(board.topKill), '*' + board.topKill.level + '*', '[:link:](#)'));
+    pvp.push(cells(who(board.topKill), '*' + board.topKill.level + '*', '[:link:](#features)'));
 
     var creatures = [
       '## <:creature:> Creature Kills',
-      '**184,207** [Flimsy Lost Souls](#)',
-      '**91,442** [Cobra Assassins](#)',
-      '**64,018** [Burster Spectres](#)',
-      '**41,330** [Grim Reapers](#)',
+      '**184,207** [Flimsy Lost Souls](#features)',
+      '**91,442** [Cobra Assassins](#features)',
+      '**64,018** [Burster Spectres](#features)',
+      '**41,330** [Grim Reapers](#features)',
       '## <:gold:> Special Kills',
       /* statistics/SpecialKills.all, with StatisticsEmbeds.creatureStats'
          row shape: the emoji leads, then the count, then the name.
@@ -1121,10 +1145,10 @@ Demos.stats = (function () {
          different word for it — Phosphorus and Goshnar's Megalomania are
          one named boss however many died, and the endpoint's spelling of
          the plural really is "Patriarches". */
-      '<a:plunder:> **7** [Plunder Patriarches](#)',
-      "<a:soulwar:> **2** [Goshnar's Megalomania](#)",
-      '<a:bakragore:> **3** [Bakragores](#)',
-      '<a:primal:> **1** [The Primal Menace](#)'
+      '<a:plunder:> **7** [Plunder Patriarches](#features)',
+      "<a:soulwar:> **2** [Goshnar's Megalomania](#features)",
+      '<a:bakragore:> **3** [Bakragores](#features)',
+      '<a:primal:> **1** [The Primal Menace](#features)'
     ];
 
     /* presentation/BossPredictionEmbeds — which bosses history says could
@@ -1227,13 +1251,13 @@ Demos.notify = (function () {
         ago: 41000,
         embeds: [
           { color: C.brand, thumb: creatureImg('The_Sandking'),
-            desc: 'The boosted boss today is:\n### <:indent:><:archfoe:> **[The Sandking](#)**' },
+            desc: 'The boosted boss today is:\n### <:indent:><:archfoe:> **[The Sandking](#features)**' },
           { color: C.brand, thumb: creatureImg('Death_Blob'),
-            desc: 'The boosted creature today is:\n### <:indent:><:levelup:> **[Death Blob](#)**' },
+            desc: 'The boosted creature today is:\n### <:indent:><:levelup:> **[Death Blob](#features)**' },
           { color: C.brand, thumb: creatureImg('Rashid'),
-            desc: 'Today Rashid can be found in:\n### <:indent:><:gold:> **[Carlin](#)**' },
+            desc: 'Today Rashid can be found in:\n### <:indent:><:gold:> **[Carlin](#features)**' },
           { color: C.brand, thumb: creatureImg('Izcandar_the_Banished'),
-            desc: 'The Dream Courts boss for **' + WORLD + '** is:\n### <:indent:><a:dreamscar:> **[Izcandar the Banished](#)**' },
+            desc: 'The Dream Courts boss for **' + WORLD + '** is:\n### <:indent:><a:dreamscar:> **[Izcandar the Banished](#features)**' },
           { color: C.brand, thumb: creatureImg('Phant'),
             desc: 'The current Drome cycle will end:\n### <:indent:><:drome:> <t:190000:R>' }
         ],
@@ -1289,7 +1313,7 @@ Demos.log = (function () {
 
   var HISTORY = [
     { ago: 30000, title: ':gear: a command was run:',
-      desc: '@' + OPERATOR + '@ added the guild' + '\n' + '**[' + KILLERS[0].guild + '](#)**' + '\n' +
+      desc: '@' + OPERATOR + '@ added the guild' + '\n' + '**[' + KILLERS[0].guild + '](#features)**' + '\n' +
             'to the hunted list for **' + WORLD + '**.',
       col: C.brand },
     { ago: 24000, title: ':gear: a command was run:',
@@ -1297,9 +1321,9 @@ Demos.log = (function () {
       col: C.brand },
     { ago: 17000, title: ':robot: enemy automatically detected:',
       desc: '@Violent Bot@ added the player' + '\n' + vc(EARLIER_KILLER.voc) + ' **' + EARLIER_KILLER.level +
-            '** — **[' + EARLIER_KILLER.name + '](#)**' + '\n' +
+            '** — **[' + EARLIER_KILLER.name + '](#features)**' + '\n' +
             'to the hunted list for **' + WORLD + '**.' + '\n' +
-            '*(they killed the allied player **[' + EARLIER_VICTIM.name + '](#)***.',
+            '*(they killed the allied player **[' + EARLIER_VICTIM.name + '](#features)**)*.',
       col: C.yellow }
   ];
 
@@ -1318,9 +1342,9 @@ Demos.log = (function () {
             color: C.red,
             title: vc(VICTIM.voc) + ' ' + VICTIM.name + ' ' + vc(VICTIM.voc),
             desc: guildLine(VICTIM).slice(0, -1) + '\nKilled <t:0:R> at level ' + VICTIM.level +
-                  '\nby ' + KILLERS.map(function (k) { return '**[' + k.name + ' [' + k.level + ']](#)**'; })
+                  '\nby ' + KILLERS.map(function (k) { return '**[' + k.name + ' [' + k.level + ']](#features)**'; })
                     .slice(0, -1).join(', ') + ' and **[' + KILLERS[KILLERS.length - 1].name +
-                  ' [' + KILLERS[KILLERS.length - 1].level + ']](#)**.',
+                  ' [' + KILLERS[KILLERS.length - 1].level + ']](#features)**.',
             thumb: PVP_GIF
           }]
         });
@@ -1331,9 +1355,9 @@ Demos.log = (function () {
             ago: 20 - i * 4,
             embeds: [{
               color: C.yellow, title: ':robot: enemy automatically detected:', plain: true,
-              desc: '@Violent Bot@ added the player\n' + vc(k.voc) + ' **' + k.level + '** — **[' + k.name + '](#)**\n' +
+              desc: '@Violent Bot@ added the player\n' + vc(k.voc) + ' **' + k.level + '** — **[' + k.name + '](#features)**\n' +
                     'to the hunted list for **' + WORLD + '**.\n*(they killed the allied player **[' +
-                    VICTIM.name + '](#)***.',
+                    VICTIM.name + '](#features)**)*.',
               thumb: creatureImg('Dark_Mage_Statue')
             }]
           });
