@@ -186,8 +186,13 @@ function serverToInstant(y, mo, d, h, mi) {
   return guess;
 }
 
-/* A deterministic evening. Hunts cluster where people are awake, so a
-   week of uniformly random blocks reads as noise rather than as a rota. */
+/* A deterministic week. What makes a respawn board look like a respawn
+   board is not that bookings exist but how they sit together: a handful
+   of regulars working the same spawn, evening after evening, each taking
+   the hours the one before them left. Blocks scattered one to a day at
+   unrelated hours read as noise — nobody hunts like that. So the week is
+   built as evenings rather than as slots, and the evenings thin out the
+   further ahead they are, because that is how far people actually plan. */
 function bookingsFor(code, row) {
   var seed = 0;
   for (var i = 0; i < code.length; i++) seed = (seed * 31 + code.charCodeAt(i)) >>> 0;
@@ -197,32 +202,89 @@ function bookingsFor(code, row) {
     seed ^= seed << 5; seed >>>= 0;
     return seed / 4294967296;
   };
+
   var out = [];
+  /* Two people cannot hold one spawn at once, so every hour this week is
+     spoken for at most once — including by the live claim, which goes
+     down first and which the rest of the week has to work around. */
+  var busy = {};
+  function fits(day, at, len) {
+    var runs = busy[day] || [];
+    for (var i = 0; i < runs.length; i++) {
+      if (at < runs[i][1] && at + len > runs[i][0]) return false;
+    }
+    return true;
+  }
+  function place(b) {
+    (busy[b.day] = busy[b.day] || []).push([b.at, b.at + b.len]);
+    out.push(b);
+  }
 
   /* The spawn's own block, on the day its start actually falls on —
      row.start is minutes from midnight TODAY and may run past 1440 into
-     tomorrow, so the day comes off the same number the card reads. */
+     tomorrow, or before 0 into yesterday, so the day comes off the same
+     number the card reads. */
   if (row.state !== 'free') {
-    out.push({
+    place({
       day: Math.floor(row.start / 1440),
-      at: (row.start % 1440) / 60,
+      at: (((row.start % 1440) + 1440) % 1440) / 60,
       len: row.mins / 60,
       state: row.state, who: row.who, mine: !!row.mine
     });
   }
 
-  var members = D.MEMBERS;
-  for (var d = 0; d < 7; d++) {
-    var count = d === 0 ? 1 : (n() < 0.55 ? 1 : (n() < 0.5 ? 2 : 0));
-    for (var k = 0; k < count; k++) {
-      var at = 16 + Math.floor(n() * 7);
-      if (k === 1) at = 8 + Math.floor(n() * 5);
-      var len = [2, 3, 4][Math.floor(n() * 3)];
-      out.push({
-        day: d, at: at, len: len,
-        state: n() < 0.45 ? 'confirmed' : 'booked',
-        who: members[Math.floor(n() * members.length)], mine: false
-      });
+  /* The regulars. A respawn belongs to whoever keeps turning up to it —
+     usually one person more than the rest, and three or four in all. Drawn
+     off the same seed, so a spawn keeps its cast between renders and two
+     spawns do not share one. */
+  var pool = D.MEMBERS.slice(), cast = [];
+  for (var c = 0; c < 4 && pool.length; c++) {
+    cast.push(pool.splice(Math.floor(n() * pool.length), 1)[0]);
+  }
+  var who = function () {
+    var r = n();
+    return cast[r < 0.42 ? 0 : r < 0.72 ? 1 : r < 0.9 ? 2 : 3] || cast[0];
+  };
+
+  for (var d = OPEN_FROM; d <= OPEN_TO; d++) {
+    /* Whether anybody has taken this evening at all. Tonight and tomorrow
+       are all but spoken for, and it thins from there — but it thins
+       rather than stopping. A hard drop left a week of empty columns in
+       the middle and one lone booking at the far end, which is the same
+       scattered look further along the strip. */
+    var taken = d <= 1 ? 0.95 : d <= 3 ? 0.86 : d <= 6 ? 0.7 : d <= 9 ? 0.52 : 0.38;
+    if (n() > taken) continue;
+
+    /* A booking near enough to matter gets confirmed; one a week out is
+       still just pencilled in. */
+    var confirm = d <= 2 ? 0.75 : d <= 6 ? 0.45 : 0.15;
+
+    /* Prime time, and then whoever wants what is left of it. Each hunt
+       starts where the one before it ended — the back-to-back run is what
+       a contested spawn looks like, and it is the thing a reader is meant
+       to recognise. */
+    var at = 17 + Math.floor(n() * 4);
+    var runs = n() < 0.34 ? 1 : (n() < 0.78 ? 2 : 3);
+    for (var k = 0; k < runs && at < 24; k++) {
+      var len = 2 + Math.floor(n() * 3);
+      if (fits(d, at, len)) {
+        place({ day: d, at: at, len: len,
+                state: n() < confirm ? 'confirmed' : 'booked',
+                who: who(), mine: false });
+      }
+      at += len;
+    }
+
+    /* Server save pulls its own crowd, and the people who hunt on it hunt
+       on it every day. Only on the days near enough for anyone to have
+       bothered. */
+    if (d <= 5 && n() < 0.38) {
+      var mAt = 9 + Math.floor(n() * 3), mLen = 2 + Math.floor(n() * 2);
+      if (fits(d, mAt, mLen)) {
+        place({ day: d, at: mAt, len: mLen,
+                state: n() < confirm ? 'confirmed' : 'booked',
+                who: who(), mine: false });
+      }
     }
   }
   return out;
@@ -297,14 +359,27 @@ function weekHTML(s, row) {
                  pad(ss.getHours()) + ':' + pad(ss.getMinutes()) + '</div>';
     }
 
-    var placed = blocks.filter(function (b) { return b.day === day.offset; }).map(function (b) {
+    /* A hunt begun before local midnight belongs to both the day it starts
+       and the day it ends, so each column asks for the ones that start in
+       it and the ones that run into it. Asking only for the first could
+       produce nothing but the piece that began here, which is how the far
+       side of midnight goes missing. */
+    var placed = blocks.filter(function (b) {
+      return b.day === day.offset || (b.day === day.offset - 1 && b.at + b.len > 24);
+    }).map(function (b) {
       /* HH:MM either side, as board.html writes it. Flooring to the hour
          labelled a 5:41-to-7:41 hunt "5am to 7am" — a block drawn in the
-         right place saying the wrong time. */
+         right place saying the wrong time. Both halves of a split carry
+         the whole range: the piece above midnight is not where it
+         finishes, and the piece below is not where it began. */
       var from = hhmm(b.at);
       var to = hhmm(b.at + b.len);
-      return '<div class="wk-block b-' + b.state + (b.mine ? ' b-mine' : '') +
-             '" style="--at:' + b.at + ';--len:' + b.len + '">' +
+      var head = b.day === day.offset;
+      var at = head ? b.at : 0;
+      var len = head ? Math.min(b.len, 24 - b.at) : b.at + b.len - 24;
+      var clip = head ? (b.at + b.len > 24 ? ' clip-bottom' : '') : ' clip-top';
+      return '<div class="wk-block b-' + b.state + (b.mine ? ' b-mine' : '') + clip +
+             '" style="--at:' + at + ';--len:' + len + '">' +
                '<span class="who">@' + esc(b.who) + '</span>' +
                '<span class="tm">' + from + '–' + to + '</span>' +
              '</div>';

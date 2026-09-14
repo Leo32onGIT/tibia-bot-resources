@@ -417,6 +417,11 @@
 .db .b-confirmed { --tint: rgba(91, 140, 255, 0.3); border-color: var(--st-confirmed); color: #cfdcff; }
 .db .b-asked { --tint: rgba(224, 169, 62, 0.2); border-color: var(--st-asked); color: #e8c887; }
 .db .b-mine { box-shadow: inset 3px 0 0 currentColor; }
+/* A block cut by local midnight keeps a flat, dashed edge, so it reads as
+   continuing into the next column rather than as a hunt that really stops
+   at the bottom of the day. */
+.db .clip-top { border-top-left-radius: 0; border-top-right-radius: 0; border-top-style: dashed; }
+.db .clip-bottom { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-style: dashed; }
 
 /* Server save and now. Both mark a height on the hour axis, and that axis
    is shared by every column — which is why each spans the whole grid, and
