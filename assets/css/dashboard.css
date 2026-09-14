@@ -248,3 +248,99 @@
   .db-filter { margin-left: 0; flex: 1 1 100%; }
   .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
 }
+
+/* ===================================================================
+   The week, from board.html's calendar.
+
+   Two grids of identical shape stacked in one: the headings and the day
+   columns. A day is a fixed width and the strip is as long as it needs
+   to be — a seventh-of-the-panel column would make the week a page,
+   where a fixed one makes it a strip that runs on as far as there are
+   days and a wider panel simply shows more of it.
+   =================================================================== */
+.db-window { width: min(760px, calc(100vw - 32px)); }
+
+.db .cal-legend {
+  display: flex; gap: 14px; padding: 9px 0 11px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--panel-border); margin-top: 14px;
+}
+.db .cal-legend span { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.db .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; border: 1.5px solid; }
+
+.db .wk-body {
+  overflow: auto; max-height: 260px; margin-top: 2px;
+  /* One finger scrolls the way the browser scrolls. */
+  touch-action: pan-x pan-y;
+}
+.db .wk-body::-webkit-scrollbar { width: 10px; height: 10px; }
+.db .wk-body::-webkit-scrollbar-thumb {
+  background: #2a3140; border-radius: 5px;
+  border: 3px solid var(--panel); background-clip: padding-box;
+}
+.db .wk-grid {
+  position: relative; width: max-content;
+  --gutter: 46px; --daycol: 132px; --row: 28px; --min-block: 13px;
+  display: grid; grid-template-columns: var(--gutter) repeat(7, var(--daycol));
+  grid-template-rows: auto 1fr;
+}
+/* The corner the two sticky axes meet in, above both of them. */
+.db .wk-corner {
+  position: sticky; left: 0; top: 0; z-index: 8; background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+}
+.db .wk-head {
+  position: sticky; top: 0; z-index: 6; background: var(--panel);
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); text-align: center;
+  padding: 7px 0 6px; border-bottom: 1px solid var(--panel-border);
+}
+.db .wk-head.today { color: var(--accent); }
+.db .wk-head .dnum { display: block; font-size: 13px; color: var(--text-strong); margin-top: 2px; letter-spacing: 0; }
+
+/* Stuck to the left edge with the days sliding behind it. It needs its
+   own background for that, or the columns show through the labels. */
+.db .wk-hours { position: sticky; left: 0; z-index: 5; background: var(--panel); border-right: 1px solid var(--panel-border); }
+.db .wk-hour {
+  height: var(--row); font-family: var(--mono); font-size: 9.5px; color: var(--muted);
+  text-align: right; padding-right: 7px; position: relative; top: -5px;
+  font-variant-numeric: tabular-nums;
+}
+.db .wk-col { border-left: 1px solid var(--panel-border); position: relative; }
+.db .wk-cell { height: var(--row); border-bottom: 1px solid rgba(31, 36, 48, 0.55); }
+
+.db .wk-block {
+  position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 2px 5px;
+  overflow: hidden; font-family: var(--mono); font-size: 9.5px; line-height: 1.25;
+  border: 1px solid;
+  top: calc(var(--row) * var(--at, 0));
+  height: max(var(--min-block), calc(var(--row) * var(--len, 1) - 2px));
+  /* Opaque, whatever the state's tint. A wash with the hour rules showing
+     through reads as coloured glass laid over the grid rather than as a
+     thing sitting on it — and on a two-hour block the line across the
+     middle looks like the block has been cut in two. */
+  background: linear-gradient(var(--tint, transparent), var(--tint, transparent)), var(--panel);
+}
+.db .wk-block .who { font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A time never breaks across two lines. Half of "19:00→21:00" on one line
+   and half on the next is not a shorter label, it is a wrong-looking one. */
+.db .wk-block .tm { opacity: 0.75; font-variant-numeric: tabular-nums; display: block; white-space: nowrap; }
+
+/* State decides the colour; whose it is decides how loud. Two hues would
+   mean a booking of yours and one of theirs looked like different kinds
+   of thing, which they are not. */
+.db .b-claimed { --tint: rgba(210, 51, 105, 0.26); border-color: var(--st-claimed); color: #f3a6c0; }
+.db .b-booked { --tint: rgba(91, 140, 255, 0.16); border-color: var(--st-booked); border-style: dashed; color: #cfdcff; }
+.db .b-confirmed { --tint: rgba(91, 140, 255, 0.3); border-color: var(--st-confirmed); color: #cfdcff; }
+.db .b-asked { --tint: rgba(224, 169, 62, 0.2); border-color: var(--st-asked); color: #e8c887; }
+.db .b-mine { box-shadow: inset 3px 0 0 currentColor; }
+
+/* The Discord mark before a claimant's name. */
+.db .who .d-mark {
+  width: 11px; height: 11px; flex: none;
+  vertical-align: -1px; fill: var(--claimant);
+}
+
+@media (max-width: 620px) {
+  .db .wk-grid { --daycol: 108px; --gutter: 40px; }
+  .db .wk-body { max-height: 220px; }
+}

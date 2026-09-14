@@ -23,6 +23,13 @@ var creatureImg = D.creatureImg, clockTime = D.clockTime, esc = D.esc;
 
 var DOT = '·', ARROW = '→';
 
+/* The Discord mark, verbatim from board.html. A claimant is a Discord
+   account rather than a Tibia character, and on a board where every other
+   name is a character that distinction has to be visible. Filled with the
+   claimant colour rather than currentColor: the mark sits outside the
+   name plate, where currentColor is the muted grey of the line. */
+var DISCORD_MARK = '<svg class="d-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>';
+
 var el = {}, filter = '', open = null, timer = null;
 
 /* ---------------------------------------------------------------------
@@ -62,7 +69,7 @@ function shown() {
    finding at a glance is the person — so that is the one word set apart. */
 function stateLine(row) {
   if (row.state === 'free') return 'free';
-  var who = '<span class="at-name">' + esc(row.who) + '</span>';
+  var who = DISCORD_MARK + '<span class="at-name">' + esc(row.who) + '</span>';
   if (row.state === 'claimed') return who + ' until ' + clockTime(row.start + row.mins);
   if (row.state === 'asked') return who + ' offered ' + clockTime(row.start);
   return who + ' booked ' + clockTime(row.start);
@@ -111,8 +118,114 @@ function render() {
 }
 
 /* ---------------------------------------------------------------------
+   The week.
+
+   Booking used to be a link somewhere else, which made planning a hunt
+   feel like a separate errand from taking one — they are the same
+   thought, so they are one window.
+
+   Display only here. Everything the real grid does on top of this is
+   about putting a booking somewhere: dragging a block, pinching the zoom,
+   clicking an empty hour. None of that is worth reproducing on a landing
+   page, and all of it would need a booking model behind it. What the page
+   has to show is the shape of the answer — a week with other people's
+   evenings already on it.
+
+   Blocks are placed against the hour rather than in pixels: --at is hours
+   from midnight and --len is how many it runs for, so the CSS does the
+   arithmetic and a zoom would be a reflow rather than a redraw.
+   ------------------------------------------------------------------ */
+var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/* A deterministic evening. Hunts cluster where people are awake, so a
+   week of uniformly random blocks reads as noise rather than as a rota. */
+function bookingsFor(code, row) {
+  var seed = 0;
+  for (var i = 0; i < code.length; i++) seed = (seed * 31 + code.charCodeAt(i)) >>> 0;
+  var n = function () {
+    seed ^= seed << 13; seed >>>= 0;
+    seed ^= seed >> 17;
+    seed ^= seed << 5; seed >>>= 0;
+    return seed / 4294967296;
+  };
+  var out = [];
+
+  /* Today's block is whatever the card already says, so the week and the
+     state line cannot disagree about the same spawn. */
+  if (row.state !== 'free') {
+    out.push({
+      day: 0, at: row.start / 60, len: row.mins / 60,
+      state: row.state, who: row.who, mine: !!row.mine
+    });
+  }
+
+  var members = D.MEMBERS;
+  for (var d = 0; d < 7; d++) {
+    var count = d === 0 ? 1 : (n() < 0.55 ? 1 : (n() < 0.5 ? 2 : 0));
+    for (var k = 0; k < count; k++) {
+      var at = 16 + Math.floor(n() * 7);          /* evenings, 16:00-22:00 */
+      if (k === 1) at = 8 + Math.floor(n() * 5);  /* the odd morning slot  */
+      var len = [2, 3, 4][Math.floor(n() * 3)];
+      var state = n() < 0.45 ? 'confirmed' : 'booked';
+      out.push({
+        day: d, at: at, len: len, state: state,
+        who: members[Math.floor(n() * members.length)], mine: false
+      });
+    }
+  }
+  return out;
+}
+
+function weekHTML(s, row) {
+  var today = new Date();
+  var days = [];
+  for (var d = 0; d < 7; d++) {
+    var date = new Date(today.getTime() + d * 86400000);
+    days.push({ name: DAY_NAMES[date.getDay()], num: date.getDate(), today: d === 0 });
+  }
+
+  var head = '<div class="wk-corner"></div>' + days.map(function (day) {
+    return '<div class="wk-head' + (day.today ? ' today' : '') + '">' +
+           day.name + '<span class="dnum">' + day.num + '</span></div>';
+  }).join('');
+
+  var hours = '';
+  for (var h = 0; h < 24; h++) {
+    hours += '<div class="wk-hour">' + (h < 10 ? '0' + h : h) + ':00</div>';
+  }
+
+  var blocks = bookingsFor(s.code, row);
+  var cols = days.map(function (day, index) {
+    var cells = '';
+    for (var c = 0; c < 24; c++) cells += '<div class="wk-cell"></div>';
+    var placed = blocks.filter(function (b) { return b.day === index; }).map(function (b) {
+      var from = Math.floor(b.at) + ':' + (b.at % 1 ? '30' : '00');
+      var to = (Math.floor(b.at + b.len) % 24) + ':' + ((b.at + b.len) % 1 ? '30' : '00');
+      return '<div class="wk-block b-' + b.state + (b.mine ? ' b-mine' : '') +
+             '" style="--at:' + b.at + ';--len:' + b.len + '">' +
+               '<span class="who">' + esc(b.who) + '</span>' +
+               '<span class="tm">' + from + ARROW + to + '</span>' +
+             '</div>';
+    }).join('');
+    return '<div class="wk-col">' + cells + placed + '</div>';
+  }).join('');
+
+  return '<div class="cal-legend">' +
+      '<span><i class="swatch b-claimed"></i>being hunted</span>' +
+      '<span><i class="swatch b-booked"></i>booked</span>' +
+      '<span><i class="swatch b-confirmed"></i>confirmed</span>' +
+      '<span><i class="swatch b-asked"></i>offered</span>' +
+    '</div>' +
+    '<div class="wk-body" id="db-week">' +
+      '<div class="wk-grid">' + head +
+        '<div class="wk-hours">' + hours + '</div>' + cols +
+      '</div>' +
+    '</div>';
+}
+
+/* ---------------------------------------------------------------------
    The spawn window. One window per spawn, holding the whole decision:
-   what is happening on it now, and who is behind that.
+   what is happening on it now, and the week it is booked into.
    ------------------------------------------------------------------ */
 function renderWindow() {
   var s = SPAWNS.filter(function (x) { return x.code === open; })[0];
@@ -143,39 +256,36 @@ function renderWindow() {
     '</div>' +
     '<p class="win-sub">' + sub + '</p>';
 
-  if (row.state !== 'free') {
-    body += '<div class="up-next"><div class="up-title">Up next</div>' +
-      '<div class="up-row"><span class="up-pip"></span><span>' + esc(row.who) + '</span>' +
-        '<span class="up-when">' + clockTime(row.start) + ' ' + ARROW + ' ' +
-        clockTime(row.start + row.mins) + '</span></div>';
-    if (row.queue) {
-      body += '<div class="up-row queued"><span class="up-pip"></span>' +
-              '<span>' + row.queue + ' waiting behind</span>' +
-              '<span class="up-when">after this</span></div>';
-    }
-    body += '</div>';
+  if (row.queue) {
+    body += '<div class="up-next"><div class="up-row queued"><span class="up-pip"></span>' +
+            '<span>' + row.queue + ' waiting behind</span>' +
+            '<span class="up-when">after this</span></div></div>';
   }
+  body += weekHTML(s, row);
   el.winBody.innerHTML = body;
 
-  /* Claim is offered on anything not being hunted this minute, including a
-     spawn booked for later — taking it now and booking it for tonight are
-     different things, and the board lets you do both. */
-  if (live && row.mine) {
-    el.winFoot.innerHTML =
-      '<button class="db-btn danger" data-act="leave">Leave</button>' +
-      '<button class="db-btn" data-act="book">Book</button>' +
-      '<button class="db-btn" data-act="config">Config</button>';
-  } else if (live) {
-    el.winFoot.innerHTML =
-      '<button class="db-btn" data-act="queue">Join queue</button>' +
-      '<button class="db-btn" data-act="book">Book</button>' +
-      '<button class="db-btn" data-act="config">Config</button>';
-  } else {
-    el.winFoot.innerHTML =
-      '<button class="db-btn claim" data-act="claim">Claim</button>' +
-      '<button class="db-btn" data-act="book">Book</button>' +
-      '<button class="db-btn" data-act="config">Config</button>';
+  /* Opens on this spawn's own block where it has one, and on the evening
+     otherwise. Midnight is the top of the grid and nothing happens there
+     — and a window that opens on an empty 3am while the card above it
+     says "being hunted now" reads as two views of different spawns. */
+  var week = document.getElementById('db-week');
+  if (week) {
+    var at = row.state === 'free' ? 16 : row.start / 60;
+    week.scrollTop = Math.max(0, (at - 1.5) * 28);
   }
+
+  /* The real footer acts; this one only says what the real one offers.
+     Claiming and booking need a booking model behind them, and the page
+     already proves the round trip in #spawns above — repeating it here
+     would buy a second way to do the same thing. */
+  el.winFoot.innerHTML = live
+    ? (row.mine
+        ? '<button class="db-btn danger">Leave</button>' +
+          '<button class="db-btn">Book</button><button class="db-btn">Config</button>'
+        : '<button class="db-btn">Join queue</button>' +
+          '<button class="db-btn">Book</button><button class="db-btn">Config</button>')
+    : '<button class="db-btn claim">Claim</button>' +
+      '<button class="db-btn">Book</button><button class="db-btn">Config</button>';
 }
 
 function openWindow(code) {
@@ -245,15 +355,6 @@ function init() {
   document.getElementById('db-win-close').addEventListener('click', closeWindow);
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape' && open) closeWindow();
-  });
-
-  el.winFoot.addEventListener('click', function (ev) {
-    var b = ev.target.closest('[data-act]');
-    if (!b) return;
-    if (b.dataset.act === 'claim') SpawnState.claim(open);
-    else if (b.dataset.act === 'leave') SpawnState.release(open);
-    else return;
-    render();
   });
 
   render();
