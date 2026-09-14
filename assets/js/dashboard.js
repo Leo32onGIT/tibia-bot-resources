@@ -397,11 +397,20 @@ function renderWindow() {
   if (week) {
     var at = row.state === 'free' ? 16 : (row.start % 1440) / 60;
     week.scrollTop = Math.max(0, (at - 1.5) * 28);
-    /* Sideways to today, which is the second column — the strip opens on
-       yesterday so there is somewhere to look back to, but nobody books
-       into it. */
-    var col = parseFloat(getComputedStyle(week.querySelector('.wk-grid')).getPropertyValue('--daycol')) || 150;
-    week.scrollLeft = col * (-OPEN_FROM);
+    /* Sideways: open on yesterday, so the days in view are the one just
+       gone, today, and the ones anybody is actually planning into. Today's
+       column is at -OPEN_FROM, the strip being measured in offsets from
+       today; the column before it is where the scroll goes. Scrolling to
+       today itself would put it under the hour gutter, which is stuck to
+       the left edge with the days sliding behind it — a third of a column
+       on a phone. */
+    /* Measured, not read off --daycol: on a phone that property is a calc()
+       over viewport units, and getComputedStyle hands back the expression
+       rather than a length. parseFloat made it NaN, which fell through to
+       the desktop number and scrolled a phone twice as far as it meant to. */
+    var firstCol = week.querySelector('.wk-col');
+    var col = firstCol ? firstCol.offsetWidth : 150;
+    week.scrollLeft = Math.max(0, (-OPEN_FROM - 1) * col);
   }
 
   /* board.html's readout: the length on the left, the one action on the

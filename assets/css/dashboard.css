@@ -230,10 +230,15 @@
   font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; flex: none;
 }
 .db-window .win-close:hover { color: var(--text-strong); }
+/* A column, so the calendar inside it can be told to take what is left.
+   min-height:0 because a flex item's floor is its content, and without it
+   the grid would push the window taller rather than scroll inside it. */
 .db-window .win-body {
-  position: relative; padding: 0; overflow-y: auto; flex: 1;
+  position: relative; padding: 0; flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; overflow-y: auto;
   scrollbar-width: thin; scrollbar-color: #2a3140 transparent;
 }
+.db .cal { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .db-window .win-body::-webkit-scrollbar { width: 10px; }
 .db-window .win-body::-webkit-scrollbar-track { background: transparent; }
 .db-window .win-body::-webkit-scrollbar-thumb {
@@ -446,20 +451,67 @@
      screen actually showing it. A phone wants the whole screen — this is
      the one case where filling it is the point rather than fitting. */
   .db-window { width: 100vw; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; }
-  .db .wk-body { max-height: none; min-height: 0; flex: 1; margin: 0 3px; }
+  .db-filter { margin-left: 0; flex: 1 1 100%; }
+  .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
+
+  /* Nothing outside the week scrolls: it is the part that is too big for a
+     phone, and everything else earns its place by being small enough. The
+     grid takes the rest of the window rather than a fixed slice of it. */
   .db-window .win-body { overflow-y: hidden; }
+  .db .wk-body { flex: 1 1 auto; max-height: none; min-height: 120px; margin: 0 3px; }
+
+  /* Tighter, so the grid keeps as much of a short screen as it can. Every
+     one of these is padding: the rows still say everything they said, they
+     simply stop holding it at arm's length. */
+  .db-window .win-head { padding: 7px 12px 6px; }
+  .db .strip { padding: 6px 12px; }
   .db .readout { padding: 6px 12px; gap: 10px; }
+  /* "Book a time", which on a phone is a heading over a row of controls
+     that already say what they are for. What is left of the row — whose
+     slot it is, and until when — is the only place a phone says it. */
+  .db .cal-head .fold-title { display: none; }
+  /* Seven keys to a grid whose colours are its own legend, across a screen
+     with no width to spare for them. */
+  .db .cal-legend { display: none; }
+
+  /* The day and its number on one line. Two lines of heading over four
+     columns is a row of the grid spent saying what the row below shows. */
+  .db .wk-head { padding: 3px 0 2px; letter-spacing: 0.06em; }
+  .db .wk-head .dnum { display: inline; margin: 0 0 0 4px; font-size: 11.5px; }
+
+  /* ---- Four days, not fifteen -----------------------------------------
+     A fifteenth of a phone is about twenty pixels, which cannot say who has
+     a slot or when it runs. So the columns keep a width worth reading and
+     the week slides sideways for the rest of itself, opened on yesterday so
+     today and the two days worth planning are already in view. The gutter
+     and the day headings stay put while it does. */
+  .db .wk-grid {
+    /* The widest thing in the gutter is the server echo at 22px, so forty
+       pixels carried empty space to the left of every label. */
+    --gutter: 30px;
+    /* The four that fit: the window, less the body's margins, less the
+       gutter, split four ways. */
+    --daycol: calc((100vw - 6px - 30px) / 4);
+  }
+  /* Every pixel of a narrow column goes to the label, so a whole time fits
+     on one line and the name has somewhere to be above it. The size follows
+     the screen, because a quarter of a 320px phone is not a quarter of a
+     430px one and "19:00-21:00" has to survive both — clamped at the top so
+     a big phone gets the desktop size rather than an inflated one. */
+  .db .wk-block { padding: 2px 4px; font-size: clamp(8px, 2.4vw, 9.5px); }
+  /* The label sits closer to its own edge, the gutter having none to spare. */
+  .db .wk-hour { padding-right: 5px; }
+
+  /* Booking controls on one row: stacked and centred they took three rows
+     of a short screen. The week nav keeps its chevrons and drops its words. */
+  .db .cal-controls { justify-content: center; gap: 8px; }
+  .db .cc-repeat .field-label { display: none; }
+  .db .cc-week { margin-left: 0; gap: 8px; }
+  .db .cc-week .btn-ghost span { display: none; }
+  .db .cc-week .btn-ghost { padding: 5px 8px; }
+
   /* The tank takes what is left of the foot beside the button it feeds. */
   .db .foot-dur { flex: 1 1 auto; }
   .db .foot-dur .tank { width: auto; flex: 1; height: 40px; }
   .db .tank-in { font-size: 13px; }
-  .db-filter { margin-left: 0; flex: 1 1 100%; }
-  .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
-  /* A fifteenth of a phone is nothing. The columns keep a width worth
-     reading and the strip slides sideways for the rest of itself. */
-  .db .wk-grid { --gutter: 30px; --daycol: calc((100vw - 6px - 30px) / 4); }
-  .db .wk-body { max-height: 240px; }
-  .db .cal-legend span:nth-child(n+5) { display: none; }
-  .db .cc-week { margin-left: 0; }
-  .db .strip .fold-title { margin-left: 0; }
 }
