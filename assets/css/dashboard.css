@@ -1,0 +1,250 @@
+/* =====================================================================
+   The respawn dashboard, as the bot serves it at /dashboard.
+
+   Ported from tibia-bot/src/main/resources/web/board.html. That file
+   opens with the same tokens this site does — --bg, --panel,
+   --panel-border, --accent and the rest are identical, deliberately — so
+   unlike the Discord skin this needs no palette of its own and no font.
+   Only the state colours below are new here, and they are copied across
+   verbatim.
+
+   Everything is scoped under .db. Several of board.html's class names
+   (.card, .panel, .dot, .who) are generic enough to collide with a page
+   that grows, and the Tabler/.ti collision already cost us once.
+   ===================================================================== */
+
+.db {
+  /* board.html :root, the five state colours plus the two ink colours a
+     spawn card is drawn in. */
+  --st-free: #2ecc71;
+  --st-claimed: #d23369;
+  --st-booked: #5b8cff;
+  --st-confirmed: #5b8cff;
+  --st-asked: #e0a93e;
+  --code: #f0b232;
+  --spawn-name: #e8e9ea;
+  --claimant-rgb: 130, 140, 245;
+  --claimant: rgb(var(--claimant-rgb));
+}
+
+/* ---------------------------------------------------------- masthead */
+.db-masthead {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--panel-border); border-radius: 8px;
+  padding: 11px 15px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 13px; flex-wrap: wrap;
+}
+.db-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.db-brand img { width: 34px; height: 34px; border-radius: 8px; flex: none; }
+.db-brand .server {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--text-strong); font-weight: 600; font-size: 14px;
+}
+.db-brand .server .ti { color: var(--muted); font-size: 14px; }
+.db-brand .path { color: var(--muted); font-weight: 400; }
+.db-brand .sub {
+  display: block; font-size: 10px; font-weight: 400; color: var(--muted);
+  letter-spacing: 0.04em; margin-top: 2px; font-family: var(--mono);
+}
+.db-tier {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; border-radius: 4px; padding: 2px 7px;
+  background: rgba(167, 139, 250, 0.16); color: var(--purple); flex: none;
+}
+.db-filter {
+  margin-left: auto; flex: 0 1 240px; min-width: 0;
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-border);
+  border-radius: 7px; padding: 7px 11px; color: var(--text);
+  font: inherit; font-size: 12px;
+}
+.db-filter::placeholder { color: var(--muted); }
+.db-filter:focus { outline: none; border-color: var(--accent); }
+
+/* ------------------------------------------------- panels and titles */
+.db-panel {
+  border: 1px solid var(--panel-border); border-radius: 8px;
+  background: var(--panel); margin-bottom: 12px; overflow: hidden;
+}
+.db-panel-title {
+  padding: 11px 15px; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted);
+  border-bottom: 1px solid var(--panel-border);
+  display: flex; align-items: center; gap: 8px;
+}
+.db-panel-title::before { content: '##'; color: var(--accent); letter-spacing: normal; }
+
+/* Moderator tools: shut until asked for, and above the list because what
+   it does — adding a code — changes the list underneath it. */
+.db-fold {
+  width: 100%; display: flex; align-items: center; gap: 9px;
+  padding: 11px 15px; background: none; border: 0; color: var(--text-strong);
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
+}
+.db-fold:hover { background: rgba(255, 255, 255, 0.02); }
+.db-fold .ti-shield-half { color: var(--purple); font-size: 15px; }
+.db-fold .chev { margin-left: auto; color: var(--muted); font-size: 13px; transition: transform 0.15s ease; }
+.db-panel.open .db-fold .chev { transform: rotate(180deg); }
+.db-fold-body { display: none; padding: 0 15px 14px; }
+.db-panel.open .db-fold-body { display: block; }
+.db-fold-body p { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+
+/* ------------------------------------------------------------- cards */
+.db-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 10px; padding: 13px 15px;
+}
+.db-card {
+  position: relative; overflow: hidden; cursor: pointer; text-align: left;
+  background: rgba(255, 255, 255, 0.02); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 10px 12px; font: inherit; color: inherit;
+}
+.db-card:hover { border-color: var(--accent); }
+/* State also shows as a hairline down the leading edge, because on a busy
+   watermark the dot alone gets lost against the art. */
+.db-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--edge, transparent);
+}
+/* 128px is exactly twice a sprite's own 64px canvas, so every source pixel
+   lands on a whole number of device pixels and the art stays hard-edged.
+   Bigger than the card on purpose: the card is a window onto the art
+   rather than a frame around it. Never mirrored — Tibia sprites face a
+   deliberate direction. */
+.db-card .sprite {
+  position: absolute; right: -6px; top: 0; bottom: 0; margin: auto;
+  width: 128px; height: 128px; opacity: 0.17; pointer-events: none;
+  image-rendering: pixelated; object-fit: contain;
+}
+.db-card .body { position: relative; }
+.db-card .top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+.db .code-chip {
+  display: inline-flex; align-items: center; font-family: var(--mono); font-weight: 700;
+  font-size: 12px; font-variant-numeric: tabular-nums; color: var(--code);
+  background: rgba(240, 178, 50, 0.13); border: 1px solid rgba(240, 178, 50, 0.32);
+  border-radius: 5px; padding: 2px 7px; flex: none;
+}
+/* A spawn being hunted right now is the one thing on the board about to
+   change, so its code is the one thing that moves. */
+.db .code-chip.live { color: #ffd98a; border-color: rgba(240, 178, 50, 0.75); animation: db-pulse 2.6s ease-out infinite; }
+@keyframes db-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(240, 178, 50, 0.42); }
+  70% { box-shadow: 0 0 0 6px rgba(240, 178, 50, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 178, 50, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .db .code-chip.live { animation: none; box-shadow: 0 0 0 2px rgba(240, 178, 50, 0.3); }
+}
+
+.db .spawn-name {
+  color: var(--spawn-name); font-size: 12.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.db .card-state { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
+.db .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; border: 1.5px solid; }
+.db .dot.free { border-color: var(--st-free); background: var(--st-free); }
+.db .dot.claimed { border-color: var(--st-claimed); background: var(--st-claimed); }
+.db .dot.booked { border-color: var(--st-booked); background: transparent; }
+.db .dot.confirmed { border-color: var(--st-confirmed); background: var(--st-confirmed); }
+.db .dot.asked { border-color: var(--st-asked); background: var(--st-asked); }
+.db .who {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: flex; align-items: center; gap: 4px; min-width: 0;
+}
+.db .who.free { color: var(--st-free); }
+/* A state line is mostly punctuation and clock times, and the one word in
+   it worth finding at a glance is the person — so it is the one word set
+   apart, by weight AND colour. At 11px monospace in the muted grey, bold
+   alone is a difference you have to be told about before you can see it. */
+.db .who .at-name {
+  color: var(--claimant); background: rgba(var(--claimant-rgb), 0.12);
+  border-radius: 4px; padding: 1px 5px; font-weight: 700; flex: none;
+}
+.db .who .tick { color: var(--st-confirmed); font-size: 11px; flex: none; }
+.db .queue { font-family: var(--mono); font-size: 10px; color: var(--muted); flex: none; margin-left: auto; }
+
+.db .card-bar {
+  height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.07);
+  margin-top: 8px; overflow: hidden;
+}
+.db .card-bar span {
+  display: block; height: 100%; border-radius: 2px;
+  background: var(--st-claimed); transition: width 1s linear;
+}
+
+.db-empty { padding: 26px 16px; color: var(--muted); font-size: 13px; text-align: center; }
+
+/* ------------------------------------------------- the spawn window */
+.db-veil {
+  position: fixed; inset: 0; background: rgba(4, 5, 8, 0.72);
+  backdrop-filter: blur(2px); z-index: 40; display: none;
+}
+.db-veil.open { display: block; }
+.db-window {
+  position: fixed; z-index: 41; display: none;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(460px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 48px));
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 10px; overflow: hidden; box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+}
+.db-window.open { display: flex; flex-direction: column; }
+.db-window .watermark {
+  position: absolute; right: -14px; top: -10px; width: 190px; height: 190px;
+  opacity: 0.1; image-rendering: pixelated; object-fit: contain; pointer-events: none;
+}
+.db-window .win-head {
+  position: relative; display: flex; align-items: center; gap: 9px;
+  padding: 13px 15px; border-bottom: 1px solid var(--panel-border);
+}
+.db-window .win-title { color: var(--text-strong); font-size: 14px; font-weight: 600; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.db-window .win-region { color: var(--muted); font-size: 11px; font-family: var(--mono); flex: none; }
+.db-window .win-close {
+  margin-left: auto; background: none; border: 0; color: var(--muted);
+  font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; flex: none;
+}
+.db-window .win-close:hover { color: var(--text-strong); }
+.db-window .win-body { position: relative; padding: 14px 15px; overflow-y: auto; flex: 1; }
+.db-window .strip { display: flex; align-items: center; gap: 7px; font-size: 12.5px; margin-bottom: 4px; }
+.db-window .win-sub { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+
+.db-window .up-next { margin-top: 14px; }
+.db-window .up-title {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--muted); margin-bottom: 7px;
+}
+.db-window .up-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-top: 1px solid var(--panel-border); font-size: 12px; color: var(--text);
+}
+.db-window .up-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--st-booked); flex: none; }
+.db-window .up-row.queued .up-pip { background: var(--st-claimed); }
+.db-window .up-when { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.db-window .win-foot {
+  position: relative; display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 12px 15px; border-top: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.18);
+}
+.db-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid var(--panel-border);
+  border-radius: 7px; padding: 7px 13px; color: var(--text);
+  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.db-btn:hover:not([disabled]) { border-color: var(--accent); color: var(--text-strong); }
+.db-btn.claim { background: var(--st-free); border-color: var(--st-free); color: #06301a; }
+.db-btn.claim:hover { filter: brightness(1.08); border-color: var(--st-free); color: #06301a; }
+.db-btn.danger { color: var(--st-claimed); border-color: rgba(210, 51, 105, 0.5); }
+.db-btn.danger:hover:not([disabled]) { background: rgba(210, 51, 105, 0.1); border-color: rgba(210, 51, 105, 0.6); color: var(--st-claimed); }
+.db-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.db-note { color: var(--muted); font-size: 12px; margin: 12px 0 0; line-height: 1.8; }
+.db-note .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 0 10px; border: 1.5px solid; }
+.db-note .sw:first-of-type { margin-left: 0; }
+
+@media (max-width: 620px) {
+  .db-filter { margin-left: 0; flex: 1 1 100%; }
+  .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
+}

@@ -332,7 +332,95 @@ var SPAWNS = [
 ];
 
 var WORLD = 'Antica';
-var MEMBERS = ['najimabased', 'fausto2605', 'arkindrakin', 'lipegarcia', 'thiagobrcn', 'violentbeams', 'kaladin_s'];
+/* Invented Discord handles. The originals were lifted off a real server's
+   dashboard screenshot, which is fine for reading a layout off and not fine
+   for publishing beside fabricated claims. These are assembled from ordinary
+   words in the shapes Discord handles take; any collision with a real account
+   is coincidence rather than provenance. */
+var MEMBERS = [
+  'quietmoss', 'brasslatch', 'tallowdrip', 'nine_of_cups', 'paperwolf',
+  'slate.harbor', 'fernwick', 'umbral_fig', 'copperseam', 'mildpanic',
+  'oddly.parallel', 'tinvarnish'
+];
+
+/* ---------------------------------------------------------------------
+   SPAWN STATE — shared by #spawns and the dashboard
+
+   One model, two front doors. The dashboard draws all five states; the
+   Discord forum has only two tags to say them with, so it collapses
+   everything that is not being hunted right now into Free and puts the
+   booking in a field instead. That difference is the reason the web view
+   exists, so both demos read the same object and a claim made in one
+   shows up in the other.
+
+     free       nobody on it
+     claimed    being hunted NOW — the only state the forum tags Claimed
+     booked     a slot reserved for later
+     confirmed  that booking settled
+     asked      a handover offered, waiting on an answer
+   ------------------------------------------------------------------ */
+var SpawnState = (function () {
+  var rows = {};
+  /* Two surfaces draw this, and only the one that made a change knows to
+     redraw itself. Without a notifier the dashboard kept showing a spawn
+     as booked after it had been claimed in Discord — stale rather than
+     wrong, which is the harder kind to notice. */
+  var listeners = [];
+  function changed() { listeners.forEach(function (fn) { fn(); }); }
+
+  (function seed() {
+    var r = rng(4242);
+    /* A spread across all five, so the board shows what it can say rather
+       than a page of green and pink. Strided over MEMBERS, because a
+       uniform pick kept handing consecutive spawns to one person. */
+    var plan = ['claimed', 'booked', 'free', 'claimed', 'confirmed', 'free',
+                'asked', 'claimed', 'booked', 'free', 'confirmed', 'claimed'];
+    SPAWNS.forEach(function (s, i) {
+      var state = plan[i % plan.length];
+      rows[s.code] = state === 'free' ? { state: 'free' } : {
+        state: state,
+        who: MEMBERS[(i * 5 + 1) % MEMBERS.length],
+        mine: false,
+        start: between(r, 0, 20) * 30,
+        mins: pick(r, [120, 180, 240]),
+        left: between(r, 400, 7000),
+        queue: state === 'claimed' && r() < 0.4 ? between(r, 1, 3) : 0
+      };
+    });
+  })();
+
+  return {
+    get: function (code) { return rows[code] || { state: 'free' }; },
+    all: function () { return rows; },
+    /* Free right now — what the forum's Free tag means. A spawn booked for
+       tonight is free this minute, which is exactly why the forum needs the
+       Booked field to say the rest. */
+    isHeld: function (code) { return this.get(code).state === 'claimed'; },
+    claim: function (code) {
+      var now = new Date();
+      rows[code] = {
+        state: 'claimed', who: 'you', mine: true,
+        start: now.getHours() * 60 + now.getMinutes(),
+        mins: 180, left: 10800, queue: 0
+      };
+      changed();
+    },
+    release: function (code) { rows[code] = { state: 'free' }; changed(); },
+    subscribe: function (fn) { listeners.push(fn); },
+    freeCount: function () {
+      var n = 0, self = this;
+      SPAWNS.forEach(function (s) { if (!self.isHeld(s.code)) n++; });
+      return n;
+    }
+  };
+})();
+
+/* Minutes past midnight as a clock face, the way both surfaces print it. */
+function clockTime(mins) {
+  var h = Math.floor(mins / 60) % 24, m = ((mins % 60) + 60) % 60;
+  var ap = h >= 12 ? 'pm' : 'am';
+  return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ap;
+}
 
 /* =====================================================================
    5. DETERMINISTIC ROTATION
@@ -1328,31 +1416,7 @@ Demos.log = (function () {
    presentation/RespawnEmbeds.claimCard (the card itself)
    ------------------------------------------------------------------ */
 Demos.spawns = (function () {
-  var st = { filter: 'all', open: null, claims: {} };
-
-  (function seed() {
-    var r = rng(4242);
-    SPAWNS.forEach(function (s, i) {
-      if (i % 3 !== 0) {
-        st.claims[s.code] = {
-          /* Strided, not random: a uniform pick kept handing consecutive
-             spawns to the same member, which reads as one person holding
-             the whole board. */
-          who: MEMBERS[(i * 3 + 1) % MEMBERS.length],
-          start: between(r, 0, 20) * 30,
-          mins: pick(r, [120, 180, 240]),
-          left: between(r, 400, 7000),
-          mine: false
-        };
-      }
-    });
-  })();
-
-  function clockTime(mins) {
-    var h = Math.floor(mins / 60) % 24, m = mins % 60;
-    var ap = h >= 12 ? 'pm' : 'am';
-    return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ap;
-  }
+  var st = { filter: 'all', open: null };
 
   /* The pinned board post, from respawn/RespawnThreads.postBoard: one
      forum thread called "Respawn Claims", pinned, carrying the intro and
@@ -1384,10 +1448,10 @@ Demos.spawns = (function () {
     forum: true,
     fromTop: true,
     build: function () {
-      var free = SPAWNS.filter(function (s) { return !st.claims[s.code]; }).length;
+      var free = SpawnState.freeCount();
       var shown = SPAWNS.filter(function (s) {
-        var c = !!st.claims[s.code];
-        return st.filter === 'all' || (st.filter === 'free' ? !c : c);
+        var held = SpawnState.isHeld(s.code);
+        return st.filter === 'all' || (st.filter === 'free' ? !held : held);
       });
 
       /* Claimed first, free below. A respawn board is read to answer "is
@@ -1396,7 +1460,7 @@ Demos.spawns = (function () {
          each group the catalogue order is kept, so a spawn does not move
          around under the reader between renders. */
       shown = shown.slice().sort(function (x, y) {
-        var cx = st.claims[x.code] ? 0 : 1, cy = st.claims[y.code] ? 0 : 1;
+        var cx = SpawnState.isHeld(x.code) ? 0 : 1, cy = SpawnState.isHeld(y.code) ? 0 : 1;
         if (cx !== cy) return cx - cy;
         return SPAWNS.indexOf(x) - SPAWNS.indexOf(y);
       });
@@ -1429,7 +1493,9 @@ Demos.spawns = (function () {
         '</div>';
 
       var list = shown.map(function (s) {
-        var c = st.claims[s.code];
+        var row = SpawnState.get(s.code);
+        var c = SpawnState.isHeld(s.code) ? row : null;
+        var booked = (row.state === 'booked' || row.state === 'confirmed') ? row : null;
         var open = st.open === s.code;
         var h = '<div class="fr-post" data-spawn="' + s.code + '" aria-expanded="' + open + '">' +
           '<div>' +
@@ -1438,8 +1504,10 @@ Demos.spawns = (function () {
               (c ? 'Claimed' : 'Free') + '</span>' +
             '<div class="pt">' + esc(s.code + ' — ' + s.name) + '</div>' +
             '<div class="pm">' + (c
-              ? '<b>' + esc(c.who) + '</b> booked · ' + clockTime(c.start) + ' → ' + clockTime(c.start + c.mins)
-              : s.region) + '</div>' +
+              ? 'held by <b>' + esc(c.who) + '</b> · until ' + clockTime(c.start + c.mins)
+              : booked
+                ? s.region + ' · booked by <b>' + esc(booked.who) + '</b> at ' + clockTime(booked.start)
+                : s.region) + '</div>' +
           '</div>' +
           '<img class="pic" src="' + creatureImg(s.creature) + '" alt="" data-fb="">';
 
@@ -1459,6 +1527,14 @@ Demos.spawns = (function () {
               { n: 'Hunt end', v: clockTime(c.start + c.mins), inline: true },
               { n: 'Time left', v: '<t:' + c.left + ':R>', inline: true }
             ];
+          } else if (booked) {
+            /* RespawnEmbeds.claimCard shows booked windows whether or not
+               the spawn is free this minute — the point of booking ahead
+               is that people can plan around it, and the forum's two tags
+               cannot say it any other way. */
+            card.fields = [{ n: 'Booked', v: '`1.` **' + booked.who + '** — ' +
+                             clockTime(booked.start) + ' → ' + clockTime(booked.start + booked.mins),
+                             inline: false }];
           }
           h += '<div class="fr-open">' + embedHTML(card, 0) + buttonsHTML(
             c ? [
@@ -1482,17 +1558,8 @@ Demos.spawns = (function () {
     },
     tick: null,
     act: function (a) {
-      if (a.indexOf('claim-') === 0) {
-        var code = a.slice(6);
-        var now = new Date();
-        st.claims[code] = {
-          who: 'you', mine: true,
-          start: now.getHours() * 60 + now.getMinutes(),
-          mins: 180, left: 10800
-        };
-        return true;
-      }
-      if (a.indexOf('leave-') === 0) { delete st.claims[a.slice(6)]; return true; }
+      if (a.indexOf('claim-') === 0) { SpawnState.claim(a.slice(6)); return true; }
+      if (a.indexOf('leave-') === 0) { SpawnState.release(a.slice(6)); return true; }
       return false;
     },
     setFilter: function (f) { st.filter = f; },
@@ -1661,11 +1728,31 @@ var Shell = (function () {
         }
       });
 
+      /* The dashboard writes to the same board this forum draws, so a
+         claim made down there is a change up here. Only redraws when
+         #spawns is the channel on screen; every other channel reads
+         nothing from SpawnState. */
+      SpawnState.subscribe(function () {
+        if (active === 'spawns') render(false);
+      });
+
       select('deaths');
     }
   };
 
 })();
+
+/* What the dashboard needs from in here. The respawn board is a second
+   front door onto the same spawns, so it shares the state rather than
+   keeping its own — see assets/js/dashboard.js. */
+window.VBDemo = {
+  SpawnState: SpawnState,
+  SPAWNS: SPAWNS,
+  MEMBERS: MEMBERS,
+  creatureImg: creatureImg,
+  clockTime: clockTime,
+  esc: esc
+};
 
 document.addEventListener('DOMContentLoaded', function () { Shell.init(); });
 })();

@@ -15,6 +15,7 @@
 <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="assets/css/discord.css">
+<link rel="stylesheet" href="assets/css/dashboard.css">
 <style>
   /* Palette and component language are shared with the bot's own monitoring
      dashboard (tibia-bot/src/main/resources/web/dashboard.html) so the two
@@ -152,6 +153,7 @@
     <a class="brand" href="#top">violentbot<span class="slash">.xyz</span></a>
     <span class="spacer"></span>
     <a class="icon" href="#features" title="Features" aria-label="Features"><i class="ti ti-layout-list" aria-hidden="true"></i></a>
+    <a class="icon" href="#dashboard" title="Dashboard" aria-label="Dashboard"><i class="ti ti-layout-dashboard" aria-hidden="true"></i></a>
     <a class="icon" href="#commands" title="Commands" aria-label="Commands"><i class="ti ti-terminal-2" aria-hidden="true"></i></a>
     <a class="icon" href="https://github.com/Leo32onGIT/tibia-bot" title="GitHub" aria-label="GitHub"><i class="ti ti-brand-github" aria-hidden="true"></i></a>
     <a class="icon" href="https://discord.gg/SWMq9Pz8ud" title="Discord" aria-label="Community Discord"><i class="ti ti-brand-discord" aria-hidden="true"></i></a>
@@ -197,6 +199,69 @@
       <div class="dc-scroll" id="feed"></div>
     </div>
   </div>
+
+  <h2 class="rule" id="dashboard"><span class="hash">##</span> dashboard</h2>
+
+  <p class="lede">
+    The same respawn board on the web, for people who would rather not do it in Discord.
+    Claim something here and scroll back up &mdash; it is the same board.
+  </p>
+
+  <div class="db">
+    <div class="db-masthead">
+      <div class="db-brand">
+        <img src="assets/img/avatar.png" alt="">
+        <span>
+          <span class="server"><i class="ti ti-brand-discord" aria-hidden="true"></i>Antica<span class="path">&nbsp;/dashboard</span></span>
+          <span class="sub" id="db-sub"></span>
+        </span>
+      </div>
+      <span class="db-tier">admin</span>
+      <input class="db-filter" id="db-filter" type="search" placeholder="Filter by code, name or creature&hellip;"
+             aria-label="Filter spawns by code, name or creature">
+    </div>
+
+    <div class="db-panel" id="db-mod">
+      <button class="db-fold" type="button" aria-expanded="false">
+        <i class="ti ti-shield-half" aria-hidden="true"></i>
+        Moderator Tools
+        <i class="ti ti-chevron-down chev" aria-hidden="true"></i>
+      </button>
+      <div class="db-fold-body">
+        <p>Add and retire codes, set the claim ceiling and stamina rules, hand a spawn
+          from one member to another, and read the claim log. Moderators only &mdash;
+          everyone else never sees this panel.</p>
+      </div>
+    </div>
+
+    <div class="db-panel">
+      <div class="db-panel-title">Spawns</div>
+      <div class="db-cards" id="db-cards"></div>
+    </div>
+
+    <div class="db-veil" id="db-veil"></div>
+    <div class="db-window" id="db-window" role="dialog" aria-modal="true" aria-labelledby="db-win-title">
+      <img class="watermark" id="db-watermark" src="assets/img/avatar.png" alt="">
+      <div class="win-head">
+        <span class="code-chip" id="db-win-code"></span>
+        <span class="win-title" id="db-win-title"></span>
+        <span class="win-region" id="db-win-region"></span>
+        <button class="win-close" id="db-win-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="win-body" id="db-win-body"></div>
+      <div class="win-foot" id="db-win-foot"></div>
+    </div>
+  </div>
+
+  <p class="db-note">
+    <span class="sw" style="border-color:#2ecc71;background:#2ecc71"></span>free
+    <span class="sw" style="border-color:#d23369;background:#d23369"></span>being hunted now
+    <span class="sw" style="border-color:#5b8cff"></span>booked
+    <span class="sw" style="border-color:#5b8cff;background:#5b8cff"></span>confirmed
+    <span class="sw" style="border-color:#e0a93e;background:#e0a93e"></span>handover offered<br>
+    Discord forum tags only go as far as <b>Free</b> and <b>Claimed</b>, so a spawn booked for
+    tonight is tagged free up there with the booking in a field. Here it is its own colour.
+  </p>
 
   <h2 class="rule" id="commands"><span class="hash">##</span> commands</h2>
 
@@ -264,5 +329,6 @@
   document.getElementById('cp-year').textContent = new Date().getFullYear();
 </script>
 <script src="assets/js/demo.js"></script>
+<script src="assets/js/dashboard.js"></script>
 </body>
 </html>
