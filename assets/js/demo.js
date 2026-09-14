@@ -585,11 +585,16 @@ function buttonsHTML(row) {
     /* A label of "" is deliberate: the notifications row is five emoji-only
        buttons (ChannelService.fullblessRoleButtons passes " " as the label). */
     var bare = !b.label;
-    return '<button class="dc-btn ' + (b.style || 'secondary') + (bare ? ' bare' : '') + '"' +
+    /* A button with somewhere to go is an anchor, which is what Discord
+       renders a link-style component as too. The rest are inert by design:
+       nothing in the demo listens for a press. */
+    var tag = b.href ? 'a' : 'button';
+    return '<' + tag + ' class="dc-btn ' + (b.style || 'secondary') + (bare ? ' bare' : '') + '"' +
+           (b.href ? ' href="' + b.href + '"' : '') +
            (b.disabled ? ' disabled' : '') +
            (b.act ? ' data-act="' + b.act + '"' : '') + '>' +
            (b.emoji ? (UNI[b.emoji] ? uni(b.emoji) : custom(b.emoji)) : '') +
-           (bare ? '' : ' ' + esc(b.label)) + '</button>';
+           (bare ? '' : ' ' + esc(b.label)) + '</' + tag + '>';
   }).join('') + '</div>';
 }
 
@@ -1466,7 +1471,9 @@ Demos.spawns = (function () {
     buttons: [
       { style: 'success', label: 'Claim', emoji: 'daily' },
       { style: 'secondary', label: 'Book', emoji: 'calendar' },
-      { style: 'secondary', label: 'Dashboard', emoji: 'globe' },
+      /* The one component here that has a real destination on this page:
+         the section below is the dashboard it opens. */
+      { style: 'secondary', label: 'Dashboard', emoji: 'globe', href: '#dashboard' },
       { style: 'secondary', label: 'Config', emoji: 'gear' }
     ]
   };

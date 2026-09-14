@@ -284,12 +284,15 @@
 
 /* --------------------------------------------------------------- buttons */
 .dc-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; max-width: 462px; }
+/* Also worn by an anchor, where a component has somewhere to go — hence
+   the explicit colour and no underline, which a <button> never needed. */
 .dc-btn {
   display: inline-flex; align-items: center; gap: 6px;
   border: 0; border-radius: 3px; padding: 0 13px; height: 28px;
   font: inherit; font-size: 13px; font-weight: 500; color: #fff;
-  cursor: pointer; transition: background-color 0.15s ease;
+  text-decoration: none; cursor: pointer; transition: background-color 0.15s ease;
 }
+.dc-btn:hover { color: #fff; }
 .dc-btn.primary { background: var(--dc-blurple); }
 .dc-btn.primary:hover { background: var(--dc-blurple-hi); }
 .dc-btn.success { background: var(--dc-green); }
