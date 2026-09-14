@@ -216,9 +216,14 @@
   max-width: 56px; max-height: 56px; width: auto; height: auto;
   border-radius: 3px; align-self: start; image-rendering: pixelated;
 }
+/* An embed's attachment. Discord fits one into roughly 550x350 and makes
+   it clickable to expand, so a tall board renders narrow rather than
+   cropped — `contain`, never `cover`, or the code table loses its edges.
+   Not pixelated: this one is rendered text, not a sprite. */
 .emb .big-img {
-  grid-column: 1 / -1; width: 100%; max-height: 170px; object-fit: cover;
-  border-radius: 4px; margin-top: 8px; image-rendering: pixelated;
+  grid-column: 1 / -1; max-width: 100%; max-height: 290px;
+  width: auto; object-fit: contain; object-position: left top;
+  border-radius: 4px; margin-top: 8px; cursor: zoom-in;
 }
 .emb .foot { font-size: 11px; color: var(--dc-muted); margin-top: 8px; grid-column: 1 / -1; }
 

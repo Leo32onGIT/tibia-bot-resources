@@ -1360,9 +1360,11 @@ Demos.spawns = (function () {
      before any spawn has a post of its own — a spawn nobody has claimed
      yet has no card to put a Claim button on, so the board carries one.
 
-     The real post also holds a generated PNG of the whole code table
-     (respawn/RespawnBoardImage). That is rendered per server from its own
-     catalogue, so there is nothing honest to put in its place here. */
+     The PNG under it is the real code table, rendered from the seed
+     catalogue (tibia-bot/src/main/resources/respawns.json) through a port
+     of presentation/RespawnBoardImage: same grouping, same four balanced
+     columns, same colours, same bundled Lato for the names. A server that
+     has curated its own catalogue sees its own; this is what ships. */
   var BOARD = {
     title: ':calendar: Respawn Claims',
     intro: '<:daily:> **Claim** **·** and type a code to claim a spawn right now\n' +
@@ -1419,7 +1421,8 @@ Demos.spawns = (function () {
         (boardOpen
           ? '<div class="fr-open">' +
               embedHTML({ color: C.purple, title: 'Respawn Claims', desc: BOARD.intro,
-                          thumb: 'assets/img/avatar.png' }, 0) +
+                          thumb: 'assets/img/avatar.png',
+                          image: 'assets/img/respawn-codes.png' }, 0) +
               buttonsHTML(BOARD.buttons) +
             '</div>'
           : '') +
