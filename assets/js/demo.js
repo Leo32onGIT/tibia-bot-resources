@@ -133,13 +133,31 @@ function md(text, ago) {
   s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/@([A-Za-z ]+)@/g, '<span class="dc-mention">@$1</span>');
-  /* ## and ### headings, line-scoped. */
-  s = s.split('\n').map(function (line) {
-    if (line.indexOf('### ') === 0) return '<div class="h3">' + line.slice(4) + '</div>';
-    if (line.indexOf('## ') === 0) return '<div class="h2">' + line.slice(3) + '</div>';
-    return line;
-  }).join('\n');
-  return s;
+  /* ## and ### headings, line-scoped.
+
+     The surrounding text is white-space: pre-wrap, so a newline left on
+     either side of a heading renders as a line break ON TOP of the
+     heading's own block margin. Blocks therefore absorb their own
+     separators, and only two consecutive plain lines are rejoined with a
+     newline. */
+  var lines = s.split('\n');
+  var out = '';
+  var prevBlock = true;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i], block = false, html;
+    /* `first` rather than :first-child — a heading preceded only by a TEXT
+       node is still the first ELEMENT child, so :first-child was zeroing the
+       top margin of headings that do have text above them (every boosted
+       post). Only a heading that truly opens the description gets it. */
+    var lead = i === 0 ? ' first' : '';
+    if (line.indexOf('### ') === 0) { html = '<div class="h3' + lead + '">' + line.slice(4) + '</div>'; block = true; }
+    else if (line.indexOf('## ') === 0) { html = '<div class="h2' + lead + '">' + line.slice(3) + '</div>'; block = true; }
+    else html = line;
+    if (i > 0 && !block && !prevBlock) out += '\n';
+    out += html;
+    prevBlock = block;
+  }
+  return out;
 }
 
 /* =====================================================================
