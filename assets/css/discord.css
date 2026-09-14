@@ -1,0 +1,287 @@
+/* =====================================================================
+   Discord client skin.
+
+   A faithful-enough reproduction of Discord's current dark theme, sized
+   to sit inside the site's 720px column. Everything here is presentation
+   only — the demos in assets/js/demo.js decide what goes in it.
+
+   Channel names, categories and colours are taken from the bot itself
+   (tibia-bot @ dev); see demo.js for the per-value citations.
+   ===================================================================== */
+
+:root {
+  --dc-rail: #1e1f22;
+  --dc-side: #2b2d31;
+  --dc-chat: #313338;
+  --dc-embed: #2b2d31;
+  --dc-text: #dbdee1;
+  --dc-muted: #949ba4;
+  --dc-inter: #b5bac1;
+  --dc-strong: #f2f3f5;
+  --dc-sel: #404249;
+  --dc-hover: #35373c;
+  --dc-link: #00a8fc;
+  --dc-blurple: #5865f2;
+  --dc-blurple-hi: #4752c4;
+  --dc-green: #248046;
+  --dc-green-hi: #1a6334;
+  --dc-red: #da373c;
+  --dc-red-hi: #a12828;
+  --dc-grey: #4e5058;
+  --dc-grey-hi: #6d6f78;
+  --dc-bot: #e5ad3c;
+  --dc-divider: #3f4147;
+  --dc-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* ---------------------------------------------------------------- shell */
+.dc {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  height: 600px;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-bottom: 0;
+  font-family: "gg sans", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.375;
+}
+
+/* min-height:0 on both columns. A flex child will not shrink below its
+   content without it, so the inner scrollers never scroll and the client
+   overflows its own height and gets clipped instead. */
+.dc-side,
+.dc-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.dc-side { background: var(--dc-side); }
+.dc-main { background: var(--dc-chat); }
+
+.dc-guild {
+  height: 48px; flex: none; display: flex; align-items: center; gap: 7px;
+  padding: 0 14px; color: var(--dc-strong); font-weight: 600; font-size: 15px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); cursor: default;
+}
+.dc-guild .caret { margin-left: auto; color: var(--dc-inter); font-size: 11px; }
+
+.dc-chans { flex: 1; overflow-y: auto; padding: 8px 8px 20px; }
+.dc-cat {
+  display: flex; align-items: center; gap: 4px;
+  padding: 16px 2px 4px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; color: var(--dc-muted); cursor: default;
+  line-height: 1.3;
+}
+.dc-cat .arrow { font-size: 9px; flex: none; }
+.dc-chan {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 6px 8px; margin: 1px 0; border: 0; border-radius: 4px;
+  background: none; color: var(--dc-muted); font: inherit; font-weight: 500;
+  cursor: pointer; text-align: left; line-height: 1.25;
+}
+.dc-chan .h { font-size: 17px; font-weight: 400; color: #80848e; flex: none; line-height: 1; }
+.dc-chan .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.dc-chan:hover { background: var(--dc-hover); color: var(--dc-text); }
+.dc-chan[aria-current="true"] { background: var(--dc-sel); color: var(--dc-strong); font-weight: 600; }
+.dc-chan[aria-current="true"] .h { color: var(--dc-strong); }
+
+/* ---------------------------------------------------------------- header */
+.dc-top {
+  height: 48px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.08); z-index: 2;
+  color: var(--dc-strong); font-weight: 600;
+}
+.dc-top .h { font-size: 20px; font-weight: 400; color: #80848e; flex: none; }
+.dc-top .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; max-width: 55%; }
+.dc-top .topic {
+  margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--dc-divider);
+  color: var(--dc-muted); font-size: 12px; font-weight: 400;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.dc-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 0 20px; }
+.dc-scroll::-webkit-scrollbar,
+.dc-chans::-webkit-scrollbar { width: 8px; }
+.dc-scroll::-webkit-scrollbar-thumb,
+.dc-chans::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 4px; }
+.dc-scroll::-webkit-scrollbar-track { background: #2b2d31; }
+
+/* --------------------------------------------------------------- message */
+.msg { padding: 2px 16px 2px 68px; position: relative; margin-top: 14px; }
+.msg:hover { background: #2e3035; }
+.msg .av { position: absolute; left: 16px; top: 1px; width: 40px; height: 40px; border-radius: 50%; }
+.msg .hd { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; flex-wrap: wrap; }
+.msg .who { color: var(--dc-bot); font-weight: 500; font-size: 15px; }
+.msg .bot {
+  background: var(--dc-blurple); color: #fff; font-size: 10px; font-weight: 500;
+  border-radius: 3px; padding: 0 4px; height: 15px; line-height: 15px;
+  display: inline-flex; align-items: center; gap: 2px; align-self: center;
+}
+.msg .ts { color: var(--dc-muted); font-size: 12px; font-weight: 500; }
+
+/* ----------------------------------------------------------------- embed */
+.emb {
+  display: grid; grid-template-columns: 4px auto;
+  max-width: 440px; margin-top: 4px; border-radius: 4px; overflow: hidden;
+  background: var(--dc-embed);
+}
+.emb .in { padding: 8px 16px 16px 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.emb .body { min-width: 0; }
+.emb .ti { font-size: 16px; font-weight: 600; color: var(--dc-link); margin-bottom: 4px; line-height: 1.375; }
+.emb .ti.plain { color: var(--dc-strong); }
+.emb .de { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
+.emb .th {
+  width: 80px; height: 80px; object-fit: contain; border-radius: 3px;
+  flex: none; align-self: start; image-rendering: pixelated;
+}
+.emb .big-img {
+  grid-column: 1 / -1; width: 100%; max-height: 170px; object-fit: cover;
+  border-radius: 4px; margin-top: 8px; image-rendering: pixelated;
+}
+.emb .foot { font-size: 12px; color: var(--dc-muted); margin-top: 8px; grid-column: 1 / -1; }
+
+/* embed fields — Discord lays inline fields out in a 3-up grid */
+.emb .fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.emb .fld.wide { grid-column: 1 / -1; }
+.emb .fld .fn { font-size: 14px; font-weight: 600; color: var(--dc-strong); margin-bottom: 2px; }
+.emb .fld .fv { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; }
+
+/* markdown inside a description */
+.emb a, .dc-md a { color: var(--dc-link); text-decoration: none; font-weight: 600; }
+.emb a:hover, .dc-md a:hover { text-decoration: underline; }
+.emb em { font-style: italic; }
+.emb strong { font-weight: 700; }
+.emb code, .dc-md code {
+  font-family: var(--dc-mono); font-size: 12px; background: #1e1f22;
+  color: var(--dc-text); padding: 1px 3px; border-radius: 3px;
+}
+/* Discord's ## and ### headings, which the online list and the statistics
+   post both lean on for their section structure. */
+.emb .h2 { font-size: 20px; font-weight: 700; color: var(--dc-strong); margin: 8px 0 4px; line-height: 1.3; }
+.emb .h3 { font-size: 16px; font-weight: 700; color: var(--dc-strong); margin: 8px 0 2px; line-height: 1.3; }
+.emb .h2:first-child, .emb .h3:first-child { margin-top: 0; }
+
+/* plain (non-embed) message body, used by the online list */
+.dc-md { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
+.dc-md .h3 { font-size: 16px; font-weight: 700; color: var(--dc-strong); margin: 10px 0 2px; line-height: 1.3; }
+.dc-md .h3:first-child { margin-top: 0; }
+
+/* ----------------------------------------------------------------- emoji */
+.e { width: 1.2em; height: 1.2em; vertical-align: -0.22em; margin: 0 0.02em; }
+.e.big { width: 1.35em; height: 1.35em; vertical-align: -0.28em; }
+/* Discord draws emoji in an embed title a shade larger than body text. The
+   fixtures carry plain shortcodes, so the size belongs here rather than in a
+   variant the caller has to remember to ask for. */
+.emb .ti .e { width: 1.3em; height: 1.3em; vertical-align: -0.25em; }
+
+/* --------------------------------------------------------------- buttons */
+.dc-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; max-width: 440px; }
+.dc-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; border-radius: 3px; padding: 0 16px; height: 32px;
+  font: inherit; font-size: 14px; font-weight: 500; color: #fff;
+  cursor: pointer; transition: background-color 0.15s ease;
+}
+.dc-btn.primary { background: var(--dc-blurple); }
+.dc-btn.primary:hover { background: var(--dc-blurple-hi); }
+.dc-btn.success { background: var(--dc-green); }
+.dc-btn.success:hover { background: var(--dc-green-hi); }
+.dc-btn.danger { background: var(--dc-red); }
+.dc-btn.danger:hover { background: var(--dc-red-hi); }
+.dc-btn.secondary { background: var(--dc-grey); }
+.dc-btn.secondary:hover { background: var(--dc-grey-hi); }
+.dc-btn.link { background: var(--dc-grey); }
+.dc-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.dc-btn .e { width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+
+/* ------------------------------------------------------------ role chips */
+.dc-mention {
+  background: rgba(88, 101, 242, 0.3); color: #c9cdfb; border-radius: 3px;
+  padding: 0 2px; font-weight: 500;
+}
+
+/* ------------------------------------------------------- forum (#spawns) */
+.fr-bar {
+  flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.fr-tag {
+  border: 0; border-radius: 13px; padding: 4px 12px; font: inherit; font-size: 12px;
+  font-weight: 600; background: #1e1f22; color: var(--dc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.fr-tag[aria-pressed="true"] { background: var(--dc-sel); color: var(--dc-strong); }
+.fr-tag .dot { width: 8px; height: 8px; border-radius: 50%; }
+.fr-count { margin-left: auto; font-size: 12px; color: var(--dc-muted); }
+
+.fr-list { padding: 12px 16px 20px; display: grid; gap: 10px; }
+.fr-post {
+  background: #2b2d31; border-radius: 8px; padding: 14px 16px; cursor: pointer;
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start;
+  border: 1px solid transparent; transition: border-color 0.15s ease;
+}
+.fr-post:hover { border-color: #3f4147; background: #303338; }
+.fr-post[aria-expanded="true"] { border-color: var(--dc-blurple); }
+.fr-post .pill {
+  display: inline-flex; align-items: center; gap: 5px; border-radius: 10px;
+  padding: 2px 9px; font-size: 11px; font-weight: 600; margin-bottom: 6px;
+}
+.fr-post .pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.fr-post .pill.free { background: rgba(46, 204, 113, 0.15); color: #3ecf8e; }
+.fr-post .pill.claimed { background: rgba(218, 55, 60, 0.15); color: #f0777a; }
+.fr-post .pt { font-size: 15px; font-weight: 600; color: var(--dc-strong); line-height: 1.3; }
+.fr-post .pm { font-size: 12px; color: var(--dc-muted); margin-top: 4px; }
+.fr-post .pm b { color: var(--dc-bot); font-weight: 500; }
+.fr-post .pic { width: 60px; height: 60px; object-fit: contain; border-radius: 4px; image-rendering: pixelated; }
+.fr-open { grid-column: 1 / -1; margin-top: 4px; }
+
+/* ------------------------------------------------------- arrival flash */
+@keyframes dc-arrive {
+  from { background: rgba(88, 101, 242, 0.14); }
+  to { background: transparent; }
+}
+.msg.new { animation: dc-arrive 1.6s ease-out; }
+@media (prefers-reduced-motion: reduce) { .msg.new { animation: none; } }
+
+/* --------------------------------------------------------- empty states */
+.dc-empty {
+  padding: 56px 24px; text-align: center; color: var(--dc-muted);
+  font-size: 13px; line-height: 1.8;
+}
+.dc-empty .mark { font-size: 30px; color: #5d6069; margin-bottom: 8px; }
+.dc-empty b { color: var(--dc-strong); }
+
+/* -------------------------------------------------------- mobile: strip */
+.dc-strip { display: none; }
+
+@media (max-width: 680px) {
+  .dc { grid-template-columns: 1fr; height: 76vh; min-height: 460px; }
+  .dc-side { display: none; }
+
+  .dc-strip {
+    display: flex; gap: 6px; padding: 8px 10px; overflow-x: auto;
+    background: var(--dc-side); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+    scrollbar-width: none; flex: none;
+  }
+  .dc-strip::-webkit-scrollbar { display: none; }
+  .dc-strip button {
+    flex: none; border: 0; border-radius: 13px; padding: 5px 11px;
+    background: #1e1f22; color: var(--dc-muted); font: inherit; font-size: 12px;
+    font-weight: 600; white-space: nowrap; cursor: pointer;
+  }
+  .dc-strip button[aria-current="true"] { background: var(--dc-sel); color: var(--dc-strong); }
+
+  /* Discord's 68px avatar gutter costs a fifth of a 375px screen, and a
+     440px embed then wraps every three words. Shrink the gutter, let the
+     embed use the column, and step the type down one notch. */
+  .msg { padding: 2px 10px 2px 46px; }
+  .msg .av { width: 28px; height: 28px; left: 10px; top: 2px; }
+  .msg .who { font-size: 14px; }
+  .emb, .dc-row { max-width: 100%; }
+  .emb .in { padding: 8px 12px 12px 10px; gap: 8px; }
+  .emb .ti { font-size: 15px; }
+  .emb .de, .dc-md { font-size: 13.5px; }
+  .emb .th { width: 56px; height: 56px; }
+  .emb .fields { grid-template-columns: repeat(2, 1fr); }
+  .dc-top .topic { display: none; }
+  .dc-btn { padding: 0 12px; font-size: 13px; }
+  .fr-list { padding: 10px 12px 20px; }
+}
