@@ -9,6 +9,60 @@
    (tibia-bot @ dev); see demo.js for the per-value citations.
    ===================================================================== */
 
+/* ---------------------------------------------------------------------
+   The Discord typeface.
+
+   Discord's own stack is `"gg sans", "Noto Sans", ...`. gg sans is
+   proprietary — bundled with their app and served from their CDN — so it
+   is neither shippable nor hotlinkable. Noto Sans is Discord's own first
+   fallback and is what Discord itself renders when gg sans is missing,
+   so vendoring it is both the closest match and the clean licensing
+   answer (SIL OFL).
+
+   Without this the stack fell through to Segoe UI on Windows, which is
+   noticeably narrower and differently drawn — the client read as "a dark
+   web page" rather than as Discord.
+
+   Latin subset only: every string these demos render is Latin, and the
+   full family is an order of magnitude larger for glyphs nothing uses.
+   --------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/noto-sans-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/noto-sans-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/noto-sans-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/noto-sans-latin-700-normal.woff2') format('woff2');
+}
+/* Italic carries the guild rank on every death and activity embed. */
+@font-face {
+  font-family: 'Noto Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/noto-sans-latin-400-italic.woff2') format('woff2');
+}
+
 :root {
   --dc-rail: #1e1f22;
   --dc-side: #2b2d31;
@@ -43,9 +97,14 @@
   overflow: hidden;
   border: 1px solid var(--panel-border);
   border-bottom: 0;
-  font-family: "gg sans", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Discord's own stack, verbatim. gg sans is listed first because a
+     reader who has it installed should get the real thing; everyone else
+     lands on the vendored Noto Sans above, which is what Discord falls
+     back to as well. */
+  font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.375;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* min-height:0 on both columns. A flex child will not shrink below its
