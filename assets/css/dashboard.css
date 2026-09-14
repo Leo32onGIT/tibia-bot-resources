@@ -181,12 +181,19 @@
   backdrop-filter: blur(2px); z-index: 40; display: none;
 }
 .db-veil.open { display: block; }
+/* board.html's .window, verbatim. It is a panel rather than a dialog —
+   the grid is the thing it exists for, and a week squeezed into a small
+   modal is a week nobody can read. */
 .db-window {
   position: fixed; z-index: 41; display: none;
   left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: min(780px, calc(100vw - 32px)); max-height: min(640px, calc(100vh - 48px));
-  background: var(--panel); border: 1px solid var(--panel-border);
-  border-radius: 10px; overflow: hidden; box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  width: min(1600px, calc(100vw - 28px));
+  height: auto; max-height: min(1180px, calc(100vh - 40px));
+  background: var(--panel); border: 1px solid #2a3142; border-radius: 14px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  /* Nothing inside hands its leftover scroll to the page behind it. */
+  overscroll-behavior: contain;
 }
 .db-window.open { display: flex; flex-direction: column; }
 .db-window .watermark {
@@ -208,22 +215,52 @@
 }
 .db-window .win-close:hover { color: var(--text-strong); }
 .db-window .win-body { position: relative; padding: 0; overflow-y: auto; flex: 1; }
-.db-window .win-foot {
-  position: relative; display: flex; gap: 8px; flex-wrap: wrap;
-  padding: 12px 15px; border-top: 1px solid var(--panel-border);
-  background: rgba(0, 0, 0, 0.18);
+.db-window .win-foot { position: relative; flex-shrink: 0; }
+
+/* The readout: the length on the left, the one action on the right. Its
+   height never changes, so the button somebody presses over and over
+   stays in one place however much the panel has to say. */
+.db .readout {
+  padding: 10px 20px; border-top: 1px solid var(--panel-border);
+  display: flex; align-items: center; gap: 12px; font-size: 12.5px;
 }
-.db-btn {
+.db .foot-dur { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; min-width: 0; }
+.db .readout-actions { flex-shrink: 0; display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
+/* How long the hunt would run. Grey is what today's stamina has already
+   gone on, blue is what this hunt would take, and the white edge is where
+   it would end. */
+.db .tank {
+  display: block; position: relative; width: 240px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--panel-border); background: rgba(255, 255, 255, 0.02);
+  overflow: hidden; touch-action: none; user-select: none; cursor: ew-resize;
+}
+.db .tank-zones {
+  position: absolute; inset: 5px; border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05); overflow: hidden; display: flex;
+}
+.db .tank-spent { background: rgba(124, 134, 152, 0.3); }
+.db .tank-hunt { background: var(--accent); }
+.db .tank-edge {
+  position: absolute; top: 3px; bottom: 3px; width: 3px; border-radius: 2px;
+  background: var(--text-strong); box-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  z-index: 2; pointer-events: none;
+}
+.db .tank-in, .db .tank-out {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  white-space: nowrap; pointer-events: none;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.db .tank-in { font-size: 12.5px; font-weight: 600; color: #06122e; }
+.db .tank-out { font-size: 10.5px; color: var(--muted); }
+
+.db .btn {
+  background: var(--accent); border: 1px solid var(--accent); border-radius: 6px;
+  color: var(--bg); font-size: 12.5px; font-weight: 600; padding: 6px 15px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 6px;
-  background: transparent; border: 1px solid var(--panel-border);
-  border-radius: 7px; padding: 7px 13px; color: var(--text);
-  font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
 }
-.db-btn:hover { border-color: var(--accent); color: var(--text-strong); }
-.db-btn.claim { background: var(--st-free); border-color: var(--st-free); color: #06301a; }
-.db-btn.claim:hover { filter: brightness(1.08); border-color: var(--st-free); color: #06301a; }
-.db-btn.danger { color: var(--st-claimed); border-color: rgba(210, 51, 105, 0.5); }
-.db-btn.danger:hover { background: rgba(210, 51, 105, 0.1); border-color: rgba(210, 51, 105, 0.6); color: var(--st-claimed); }
+.db .btn.claim { background: var(--st-free); border-color: var(--st-free); color: #06301a; }
+.db .btn i { font-size: 15px; }
 
 /* ===================================================================
    The week, from board.html.
@@ -276,7 +313,7 @@
 .db .line-now { border: none; border-left: 2px solid var(--bad); border-radius: 0; width: 2px; }
 .db .line-ss { border: none; border-left: 2px dashed var(--warn); border-radius: 0; width: 2px; }
 
-.db .wk-body { overflow: auto; max-height: 300px; touch-action: pan-x pan-y; }
+.db .wk-body { overflow: auto; max-height: calc(100vh - 340px); min-height: 260px; touch-action: pan-x pan-y; }
 .db .wk-body::-webkit-scrollbar { width: 10px; height: 10px; }
 .db .wk-body::-webkit-scrollbar-thumb {
   background: #2a3140; border-radius: 5px;
@@ -377,6 +414,19 @@
 .db .who .d-mark { width: 11px; height: 11px; flex: none; vertical-align: -1px; fill: var(--claimant); }
 
 @media (max-width: 680px) {
+  /* dvh, not vh: on a phone 100vh is the viewport with the browser's own
+     chrome pretended away, so a full-height panel is taller than the
+     screen actually showing it. A phone wants the whole screen — this is
+     the one case where filling it is the point rather than fitting. */
+  .db-window { width: 100vw; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; }
+  .db .wk-body { max-height: none; min-height: 0; flex: 1; margin: 0 3px; }
+  .db-window .win-body { overflow-y: hidden; }
+  .db .readout { padding: 6px 12px; gap: 10px; }
+  /* The tank takes what is left of the foot beside the button it feeds. */
+  .db .foot-dur { flex: 1 1 auto; }
+  .db .foot-dur .tank { width: auto; flex: 1; height: 40px; }
+  .db .tank-in { font-size: 13px; }
+  .db .tank-out { font-size: 11px; }
   .db-filter { margin-left: 0; flex: 1 1 100%; }
   .db-cards { grid-template-columns: 1fr; padding: 11px 12px; }
   .db .wk-grid { --daycol: 112px; --gutter: 46px; }

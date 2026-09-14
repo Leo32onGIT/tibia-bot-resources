@@ -370,20 +370,48 @@ var SpawnState = (function () {
 
   (function seed() {
     var r = rng(4242);
+
+    /* Anchored to the reader's own clock, not to fixed clock times.
+       A spawn "being hunted now" whose window sat at 2:30am while the
+       reader's clock said 7am put the block in the shaded past on the
+       calendar and made the card and the grid disagree about the same
+       spawn. Everything below is minutes from midnight TODAY, local, and
+       may run past 1440 into tomorrow — clockTime wraps and the calendar
+       reads the day off the same number. */
+    var now = new Date();
+    var nowMin = now.getHours() * 60 + now.getMinutes();
+
     /* A spread across all five, so the board shows what it can say rather
        than a page of green and pink. Strided over MEMBERS, because a
        uniform pick kept handing consecutive spawns to one person. */
     var plan = ['claimed', 'booked', 'free', 'claimed', 'confirmed', 'free',
                 'asked', 'claimed', 'booked', 'free', 'confirmed', 'claimed'];
+
     SPAWNS.forEach(function (s, i) {
       var state = plan[i % plan.length];
-      rows[s.code] = state === 'free' ? { state: 'free' } : {
+      if (state === 'free') { rows[s.code] = { state: 'free' }; return; }
+
+      var mins = pick(r, [120, 180, 240]);
+      var start, left;
+      if (state === 'claimed') {
+        /* Already under way: it started far enough back that some of it is
+           spent, and what is left is what the card counts down. */
+        var elapsed = between(r, 12, mins - 15);
+        start = nowMin - elapsed;
+        left = (mins - elapsed) * 60;
+      } else {
+        /* Ahead of now — between three quarters of an hour and ten hours,
+           which is tonight for most readers and tomorrow morning for the
+           rest. */
+        start = nowMin + between(r, 45, 600);
+        left = 0;
+      }
+
+      rows[s.code] = {
         state: state,
         who: MEMBERS[(i * 5 + 1) % MEMBERS.length],
         mine: false,
-        start: between(r, 0, 20) * 30,
-        mins: pick(r, [120, 180, 240]),
-        left: between(r, 400, 7000),
+        start: start, mins: mins, left: left,
         queue: state === 'claimed' && r() < 0.4 ? between(r, 1, 3) : 0
       };
     });
@@ -401,7 +429,7 @@ var SpawnState = (function () {
       rows[code] = {
         state: 'claimed', who: 'you', mine: true,
         start: now.getHours() * 60 + now.getMinutes(),
-        mins: 180, left: 10800, queue: 0
+        mins: 180, left: 180 * 60, queue: 0
       };
       changed();
     },

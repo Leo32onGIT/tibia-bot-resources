@@ -148,6 +148,12 @@ function pad(n) { return String(n).length < 2 ? '0' + n : String(n); }
 /* Midnight and noon are 12, not 0 — "0am" is not a time anybody writes. */
 function twelveHour(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? 'am' : 'pm'); }
 
+/* An hour-with-fraction as a clock reads it, wrapping past midnight. */
+function hhmm(hours) {
+  var total = Math.round(hours * 60) % 1440;
+  return pad(Math.floor(total / 60)) + ':' + pad(total % 60);
+}
+
 /* Tibia's server save. Drawn where it falls, because a booking either
    side of it is a different night. */
 var SERVER_SAVE_HOUR = 10;
@@ -165,11 +171,16 @@ function bookingsFor(code, row) {
   };
   var out = [];
 
-  /* Today's block is whatever the card already says, so the week and the
-     state line cannot disagree about the same spawn. */
+  /* The spawn's own block, on the day its start actually falls on —
+     row.start is minutes from midnight TODAY and may run past 1440 into
+     tomorrow, so the day comes off the same number the card reads. */
   if (row.state !== 'free') {
-    out.push({ day: 0, at: row.start / 60, len: row.mins / 60,
-               state: row.state, who: row.who, mine: !!row.mine });
+    out.push({
+      day: Math.floor(row.start / 1440),
+      at: (row.start % 1440) / 60,
+      len: row.mins / 60,
+      state: row.state, who: row.who, mine: !!row.mine
+    });
   }
 
   var members = D.MEMBERS;
@@ -234,12 +245,15 @@ function weekHTML(s, row) {
       cells += '<div class="wk-cell' + (past ? ' past' : '') + '"></div>';
     }
     var placed = blocks.filter(function (b) { return b.day === index; }).map(function (b) {
-      var from = twelveHour(Math.floor(b.at));
-      var to = twelveHour(Math.floor(b.at + b.len) % 24);
+      /* HH:MM either side, as board.html writes it. Flooring to the hour
+         labelled a 5:41-to-7:41 hunt "5am to 7am" — a block drawn in the
+         right place saying the wrong time. */
+      var from = hhmm(b.at);
+      var to = hhmm(b.at + b.len);
       return '<div class="wk-block b-' + b.state + (b.mine ? ' b-mine' : '') +
              '" style="--at:' + b.at + ';--len:' + b.len + '">' +
                '<span class="who">@' + esc(b.who) + '</span>' +
-               '<span class="tm">' + from + ARROW + to + '</span>' +
+               '<span class="tm">' + from + '–' + to + '</span>' +
              '</div>';
     }).join('');
     return '<div class="wk-col">' + cells + placed + '</div>';
@@ -334,12 +348,53 @@ function renderWindow() {
     week.scrollTop = Math.max(0, (at - 1.5) * 28);
   }
 
-  /* The real footer acts; this one only says what the real one offers. */
-  el.winFoot.innerHTML = live
-    ? (row.mine
-        ? '<button class="db-btn danger">Leave</button><button class="db-btn">Book</button><button class="db-btn">Config</button>'
-        : '<button class="db-btn">Join queue</button><button class="db-btn">Book</button><button class="db-btn">Config</button>')
-    : '<button class="db-btn claim">Claim</button><button class="db-btn">Book</button><button class="db-btn">Config</button>';
+  /* board.html's readout: the length on the left, the one action on the
+     right. Not a row of buttons — the panel offers exactly one thing to
+     press at a time, and which one it is follows what pressing it would
+     actually do (primaryAction).
+
+       your own running hunt   Leave
+       somebody else's         Book next   (claiming a held spawn books
+                                            the first free window, which
+                                            is Book's outcome by another
+                                            route, so it wears Book's face)
+       anything else           Claim       (booked and confirmed both mean
+                                            nobody is on it right now) */
+  var label, cls;
+  if (live && row.mine) { label = 'Leave'; cls = 'btn'; }
+  else if (live) { label = 'Book next'; cls = 'btn'; }
+  else { label = 'Claim'; cls = 'btn claim'; }
+
+  /* The tank: how long the hunt would run. Grey is what the reader has
+     already spent of their stamina today, blue is what this hunt would
+     take, and the white edge is where it would end. */
+  var spent = 22, hunt = 46;
+  el.winFoot.innerHTML =
+    '<div class="readout">' +
+      '<div class="foot-dur">' +
+        '<span class="field-label">For</span>' +
+        '<span class="tank" role="slider" tabindex="0" aria-label="How long">' +
+          '<span class="tank-zones">' +
+            '<span class="tank-spent" style="width:' + spent + '%"></span>' +
+            '<span class="tank-hunt" style="width:' + hunt + '%"></span>' +
+          '</span>' +
+          '<span class="tank-edge" style="left:' + (spent + hunt) + '%"></span>' +
+          '<span class="tank-in" style="left:' + (spent + 4) + '%">3hr</span>' +
+          '<span class="tank-out" style="left:' + (spent + hunt + 3) + '%">' +
+            clockTime(nowMinutes() + 180) + '</span>' +
+        '</span>' +
+      '</div>' +
+      '<div class="readout-actions">' +
+        '<button class="' + cls + '"><i class="ti ti-' +
+          (label === 'Claim' ? 'flag' : label === 'Leave' ? 'door-exit' : 'calendar-plus') +
+        '" aria-hidden="true"></i>' + label + '</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function nowMinutes() {
+  var n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
 }
 
 function openWindow(code) {
