@@ -31,6 +31,7 @@ var UNI = {
   gear:           ['2699',  '⚙️'],
   robot:          ['1f916', '🤖'],
   dagger:         ['1f5e1', '🗡️'],
+  crossed_swords: ['2694',  '⚔️'],
   scissors:       ['2702',  '✂️']
 };
 
@@ -53,7 +54,14 @@ var CUSTOM = {
   gold:       'gold',         /* <:gold:1133502093039251486>       */
   boss:       'boss',         /* <:boss:1195770698401075281>       */
   creature:   'creature',     /* <:creature:1548349730650591233>   */
-  masslog:    'masslog'       /* <:masslog:1505437547717988503>    */
+  masslog:    'masslog',      /* <:masslog:1505437547717988503>    */
+  /* The notifications channel's five role icons and the server-save block. */
+  inq:        'inq',          /* <:inq:1025103806851199078>        */
+  hazard:     'hazard',       /* <:hazard:1148373566077816922>     */
+  bounty:     'bounty',       /* <:bounty:1537339697624256524>     */
+  archfoe:    'archfoe',      /* <:archfoe:1024710113728155738>    */
+  drome:      'drome',        /* <:drome:1507620940278923294>      */
+  dreamscar:  'dreamscar.gif' /* <a:dreamscar:1504728980010438717> */
 };
 var EMOJI_DIR = 'assets/img/emoji/';
 
@@ -65,7 +73,9 @@ function uni(name, big) {
 function custom(name) {
   var f = CUSTOM[name];
   if (!f) return '';
-  return '<img class="e" src="' + EMOJI_DIR + f + '.png" alt="" data-fb="">';
+  /* Animated server emoji keep their own extension; everything else is a png. */
+  var file = f.indexOf('.') > -1 ? f : f + '.png';
+  return '<img class="e" src="' + EMOJI_DIR + file + '" alt="" data-fb="">';
 }
 
 /* presentation/Emojis.scala — vocation resolved by its last word, so
@@ -392,12 +402,24 @@ function embedHTML(e, ago) {
 
 function buttonsHTML(row) {
   return '<div class="dc-row">' + row.map(function (b) {
-    return '<button class="dc-btn ' + (b.style || 'secondary') + '"' +
+    /* A label of "" is deliberate: the notifications row is five emoji-only
+       buttons (ChannelService.fullblessRoleButtons passes " " as the label). */
+    var bare = !b.label;
+    return '<button class="dc-btn ' + (b.style || 'secondary') + (bare ? ' bare' : '') + '"' +
            (b.disabled ? ' disabled' : '') +
            (b.act ? ' data-act="' + b.act + '"' : '') + '>' +
-           (b.emoji ? (UNI[b.emoji] ? uni(b.emoji) : custom(b.emoji)) + ' ' : '') +
-           esc(b.label) + '</button>';
+           (b.emoji ? (UNI[b.emoji] ? uni(b.emoji) : custom(b.emoji)) : '') +
+           (bare ? '' : ' ' + esc(b.label)) + '</button>';
   }).join('') + '</div>';
+}
+
+/* Discord answers a button press with an ephemeral message — visible only to
+   whoever pressed, and labelled as such. That is the real feedback for a role
+   button, which is why the demo shows one instead of inventing a state marker
+   on the embed (the embed does not change in Discord either). */
+function ephemeralHTML(text) {
+  return '<div class="dc-eph"><div class="body">' + md(text, 0) + '</div>' +
+         '<div class="tag">Only you can see this · <span>Dismiss message</span></div></div>';
 }
 
 /* A message is one avatar+header block plus its embeds/text/buttons.
@@ -414,6 +436,7 @@ function messageHTML(m, flash) {
   if (m.text) h += '<div class="dc-md">' + md(m.text, m.ago) + '</div>';
   (m.embeds || []).forEach(function (e) { h += embedHTML(e, m.ago); });
   if (m.buttons) h += buttonsHTML(m.buttons);
+  if (m.ephemeral) h += ephemeralHTML(m.ephemeral);
   return h + '</div>';
 }
 
@@ -453,6 +476,64 @@ var CH = {
   spawns:   { icon: '📅', nm: 'sᴘᴀᴡɴs', forum: true,
               topic: 'One post per respawn, showing who is on it and who is next.' }
 };
+
+/* =====================================================================
+   7b. PITCH COPY
+
+   The blurb and paragraph index.html currently carries on each accordion
+   row. Kept here rather than in the page so the copy follows whichever
+   channel is selected; the shell writes it into #chanBlurb / #chanCopy
+   when those elements exist, and does nothing when they do not (the lab
+   has no such elements).
+   ===================================================================== */
+var COPY = {
+  online: {
+    blurb: 'Who’s on, right now',
+    body: 'Run it <code>combined</code> for a single online channel, or <code>separate</code> for dedicated ' +
+          'channels for <b class="good">allies</b>, <b class="bad">enemies</b> and <b class="mute">neutrals</b>. ' +
+          'The channel name carries the headcount, so the sidebar is a dashboard.'
+  },
+  deaths: {
+    blurb: 'The one you’ll actually watch',
+    body: 'Every death on the server, marked by whether the character was an <b class="bad">enemy</b>, an ' +
+          '<b class="good">ally</b> or a <b class="mute">neutral</b>, and whether it was a PvE death or a PvP kill. ' +
+          'The colour is the news, not the allegiance — an enemy dying is good news, so it is green.'
+  },
+  levels: {
+    blurb: 'Every advancement on the server',
+    body: 'A channel that shows all level advancements on the server. Use <code>/filter</code> to put a floor ' +
+          'under it and keep the low-level churn out.'
+  },
+  activity: {
+    blurb: 'Guild joins, leaves, name changes',
+    body: 'Tracks who joined which guild, who left, who swapped, who transferred in from another server and ' +
+          'who changed their name. Here the colour <em>is</em> the allegiance — the reverse of the deaths feed.'
+  },
+  stats: {
+    blurb: 'What the world did yesterday',
+    body: 'After every server save the bot posts the day’s top experience gained and lost, the best skill ' +
+          'advance, the PVP tally with who killed whom, and what the world killed most of.'
+  },
+  spawns: {
+    blurb: 'Book a respawn before someone else does',
+    body: 'Set up respawn claims for your server so everyone can schedule hunts ahead of time. Every respawn ' +
+          'gets its own post, showing at a glance whether it is <b class="good">free</b> or ' +
+          '<b class="bad">claimed</b>, who has it and when they finish. There is a web dashboard too.'
+  },
+  notify: {
+    blurb: 'Only the events you ask for',
+    body: 'Five things you can subscribe to: an enemy dying <code>fullbless</code>, anyone dying to a rare ' +
+          '<code class="purple">nemesis boss</code>, an ally getting pked, a mass log on your world, and a ' +
+          'character you are watching logging in. The last two message you directly instead of pinging a channel.'
+  },
+  log: {
+    blurb: 'Commands + automatic enemy detection',
+    body: 'Every command run through the bot is logged here — as is every enemy the bot detected on its ' +
+          'own. Kill an ally and the bot adds you to the hunted list without anybody lifting a finger.'
+  }
+};
+/* The three online sub-channels share the combined channel's pitch. */
+COPY.allies = COPY.enemies = COPY.neutrals = COPY.online;
 
 /* =====================================================================
    8. DEMOS
@@ -1004,92 +1085,119 @@ Demos.stats = (function () {
 })();
 
 /* ---------------------------------------------------------------------
-   #notifications — BotApp.scala:1874-1965, GalthenCommands.scala,
-   NotifyEmbeds.scala. These are real Discord components, so the buttons
-   are the demo.
+   #notifications
+
+   Exactly two things live here, and nothing else:
+
+   1. The role-subscription embed, ONE PER WORLD, posted by /setup and
+      edited by /fullbless — setup/ChannelService.scala:350 for the text
+      and :335 for the buttons. Five buttons in one row, all emoji and no
+      label. The first three toggle a role that gets pinged in a channel;
+      the last two open a form for a standing DM subscription instead,
+      which is why the footer does not say "add or remove yourself".
+
+   2. The server-save message, ONE PER GUILD, deleted and re-posted every
+      save (BotApp.repostBoostedMessages): boosted boss, boosted creature,
+      Rashid, that guild's Dream Courts boss, and the Drome cycle when it
+      is due — five embeds on one message under a single button.
    ------------------------------------------------------------------ */
 Demos.notify = (function () {
-  var st = { roles: { fullbless: false, nemesis: false, allypk: true }, satchel: null };
+  /* Which roles this viewer holds. The three channel-ping roles toggle on
+     the spot; masslog and bounty are DM subscriptions and open a form, so
+     they are shown as opening something rather than as toggling. */
+  var st = { roles: {}, opened: null };
 
+  /* Order, emoji and wording all from fullblessRoleEmbed. */
   var ROLES = [
-    { id: 'nemesis',   label: 'Rare Boss',  emoji: 'nemesis', thumb: 'Ferumbras',
-      body: 'if anyone dies to a rare boss (so you can go steal it).' },
-    { id: 'fullbless', label: 'Fullbless',  emoji: 'enemy', thumb: 'Grim_Reaper',
-      body: 'when an enemy over level 250 dies without a death protection.' },
-    { id: 'allypk',    label: 'Ally PK',    emoji: 'ally', thumb: 'Dark_Mage_Statue',
-      body: 'the moment one of your own is killed by a player.' }
+    { id: 'fullbless', emoji: 'inq',     name: 'Fullbless',
+      line: 'If an enemy fullblesses and is over level `250`', kind: 'role', style: 'success' },
+    { id: 'nemesis',   emoji: 'boss',    name: 'Nemesis',
+      line: 'If anyone dies to a rare boss', kind: 'role', style: 'primary' },
+    { id: 'allypk',    emoji: 'hazard',  name: 'Ally PK',
+      line: 'If an ally gets pked', kind: 'role', style: 'danger' },
+    { id: 'masslog',   emoji: 'masslog', name: 'Mass Log',
+      line: 'If enough enemies log in at once on **' + WORLD + '**', kind: 'dm', style: 'secondary' },
+    { id: 'bounty',    emoji: 'bounty',  name: 'Bounty',
+      line: "If a character you're watching `logs in` on **" + WORLD + '**', kind: 'dm', style: 'secondary' }
   ];
 
   return {
     ch: 'notify',
+    /* Only two messages live here, and the role row is the one worth
+       reaching first, so the channel opens on it rather than on the
+       server-save block below. */
+    fromTop: true,
     build: function () {
       var msgs = [];
 
-      /* The server-save post: boosted boss, boosted creature, Rashid,
-         Dream Courts, each its own brand-coloured embed. */
+      /* ---- 1. the role embed, one per world ---- */
       msgs.push({
-        ago: 46000,
+        ago: 92000,
+        embeds: [{
+          color: C.brand,
+          title: ':crossed_swords: ' + WORLD + ' :crossed_swords:',
+          desc: ROLES.map(function (r) {
+            return '<:' + r.emoji + ':>@' + r.name + '@ ' + r.line;
+          }).join('\n'),
+          thumb: 'Phantasmal_Ooze.gif',
+          footer: 'Use the buttons below to set these up:'
+        }],
+        buttons: ROLES.map(function (r) {
+          return { style: r.style, label: '', emoji: r.emoji, act: 'role-' + r.id };
+        }),
+        ephemeral: st.reply
+      });
+
+      /* ---- 2. the server-save message, five embeds, one button ---- */
+      msgs.push({
+        ago: 41000,
         embeds: [
-          { color: C.brand, desc: 'The boosted boss today is:\n### <:boss:> **[The Sandking](#)**',
-            thumb: creatureImg('The_Sandking') },
-          { color: C.brand, desc: 'The boosted creature today is:\n### <:creature:> **[Death Blob](#)**',
-            thumb: creatureImg('Death_Blob') },
-          { color: C.brand, desc: 'Today Rashid can be found in:\n### <:indent:><:gold:> **[Carlin](#)**',
-            thumb: creatureImg('Rashid') }
+          { color: C.brand, thumb: creatureImg('The_Sandking'),
+            desc: 'The boosted boss today is:\n### <:indent:><:archfoe:> **[The Sandking](#)**' },
+          { color: C.brand, thumb: creatureImg('Death_Blob'),
+            desc: 'The boosted creature today is:\n### <:indent:><:levelup:> **[Death Blob](#)**' },
+          { color: C.brand, thumb: creatureImg('Rashid'),
+            desc: 'Today Rashid can be found in:\n### <:indent:><:gold:> **[Carlin](#)**' },
+          { color: C.brand, thumb: creatureImg('Dream_Scar'),
+            desc: 'The Dream Courts boss for **' + WORLD + '** is:\n### <:indent:><a:dreamscar:> **[Izcandar the Banished](#)**' },
+          { color: C.brand, thumb: creatureImg('Phant'),
+            desc: 'The current Drome cycle will end:\n### <:indent:><:drome:> <t:190000:R>' }
         ],
         buttons: [{ style: 'primary', label: 'Server Save Notifications', emoji: 'letter' }]
       });
 
-      /* Galthen's satchel tracker — GalthenCommands.scala:25 */
-      var satchel = st.satchel
-        ? '<:satchel:> can be collected by **`main`** <t:2592000:R>'
-        : 'This is a **[Galthen\'s Satchel](#)** cooldown tracker.\nMark the <:satchel:> as **Collected** and I will message you when the 30 day cooldown expires.';
-      msgs.push({
-        ago: 30000,
-        embeds: [{ color: C.brand, desc: satchel, thumb: 'assets/img/emoji/satchel.png' }],
-        buttons: [
-          { style: 'success', label: 'Collected', act: 'satchel-set', disabled: !!st.satchel },
-          { style: 'danger', label: 'Clear', act: 'satchel-clear', disabled: !st.satchel }
-        ]
-      });
-
-      /* Role pokes. Add Role / Remove Role flip the member's own role. */
-      ROLES.forEach(function (role, i) {
-        var on = st.roles[role.id];
-        msgs.push({
-          ago: 22000 - i * 300,
-          embeds: [{
-            color: C.brand,
-            title: '<:' + role.emoji + ':> ' + WORLD,
-            plain: true,
-            desc: 'The bot will poke @' + role.label + '@\n\n' + role.body +
-                  '\nAdd or remove yourself from the role using the buttons below.' +
-                  (on ? '\n\n✓ *You have this role.*' : ''),
-            thumb: creatureImg(role.thumb)
-          }],
-          buttons: [
-            { style: 'success', label: 'Add Role', act: 'role-add-' + role.id, disabled: on },
-            { style: 'danger', label: 'Remove Role', act: 'role-del-' + role.id, disabled: !on }
-          ]
-        });
-      });
       return msgs;
     },
     tick: null,
     act: function (a) {
-      if (a === 'satchel-set') st.satchel = true;
-      else if (a === 'satchel-clear') st.satchel = null;
-      else if (a.indexOf('role-add-') === 0) st.roles[a.slice(9)] = true;
-      else if (a.indexOf('role-del-') === 0) st.roles[a.slice(9)] = false;
+      if (a.indexOf('role-') !== 0) return false;
+      var id = a.slice(5);
+      var role = ROLES.filter(function (r) { return r.id === id; })[0];
+      if (!role) return false;
+
+      if (role.kind === 'dm') {
+        /* Masslog and Bounty open a modal rather than toggling on the spot;
+           the role follows whatever the form settles on. A real modal would
+           cover the client and hide the thing being demonstrated, so the
+           demo says what the form is for instead. */
+        st.reply = '<:' + role.emoji + ':> **' + role.name + '** opens a form: pick a threshold, ' +
+                   'and the bot DMs you instead of pinging a channel.';
+      } else {
+        st.roles[id] = !st.roles[id];
+        st.reply = st.roles[id]
+          ? '<:' + role.emoji + ':> You now have the @' + role.name + '@ role. ' +
+            'You will be pinged ' + role.line.charAt(0).toLowerCase() + role.line.slice(1)
+          : '<:' + role.emoji + ':> Removed the @' + role.name + '@ role.';
+      }
       return true;
     },
     controls:
-      row('these buttons are real',
-          '<span class="legend">Discord message components, not pictures of them</span>',
-          'Click <b>Add Role</b> or <b>Collected</b> &mdash; the message updates the way it does in Discord.') +
-      row('/galthen <span class="arg">satchel</span>',
-          '<span class="legend">a 30-day cooldown the bot remembers for you</span>',
-          'It messages you when the cooldown expires, wherever you are.'),
+      row('press a button',
+          '<span class="legend">five roles, one row, no labels — just the emoji</span>',
+          'Three toggle a role that gets pinged in a channel. The last two open a form for a DM instead.') +
+      row('posted automatically',
+          '<span class="legend">the boosted block is deleted and re-posted every server save</span>',
+          'Boosted boss and creature, Rashid, your Dream Courts boss, and the Drome cycle when it is due.'),
     wire: function () {}
   };
 })();
@@ -1225,6 +1333,17 @@ Demos.spawns = (function () {
       var shown = SPAWNS.filter(function (s) {
         var c = !!st.claims[s.code];
         return st.filter === 'all' || (st.filter === 'free' ? !c : c);
+      });
+
+      /* Claimed first, free below. A respawn board is read to answer "is
+         anyone on this, and when do they finish" — the taken ones carry
+         that answer and the free ones are a flat list underneath. Within
+         each group the catalogue order is kept, so a spawn does not move
+         around under the reader between renders. */
+      shown = shown.slice().sort(function (x, y) {
+        var cx = st.claims[x.code] ? 0 : 1, cy = st.claims[y.code] ? 0 : 1;
+        if (cx !== cy) return cx - cy;
+        return SPAWNS.indexOf(x) - SPAWNS.indexOf(y);
       });
 
       var bar = '<div class="fr-bar">' +
@@ -1406,6 +1525,13 @@ var Shell = (function () {
     el.topic.textContent = CH[active].topic;
     el.hash.textContent = CH[active].forum ? '≡' : '#';
 
+    /* Only the integrated page has these; the lab does not. */
+    var copy = COPY[active];
+    if (copy) {
+      if (el.blurb) el.blurb.textContent = copy.blurb;
+      if (el.copy) el.copy.innerHTML = copy.body;
+    }
+
     if (d.forum) {
       el.feed.innerHTML = d.build();
     } else {
@@ -1487,6 +1613,8 @@ var Shell = (function () {
       el.name = document.getElementById('chName');
       el.topic = document.getElementById('chTopic');
       el.hash = document.getElementById('chHash');
+      el.blurb = document.getElementById('chanBlurb');
+      el.copy = document.getElementById('chanCopy');
 
       el.feed.addEventListener('scroll', function () {
         atBottom = el.feed.scrollHeight - el.feed.scrollTop - el.feed.clientHeight < 40;

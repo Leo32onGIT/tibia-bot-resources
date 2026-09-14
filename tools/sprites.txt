@@ -12,6 +12,7 @@ Death_Blob
 Demon_Skeleton
 Destroyer
 Dragon_Lord
+Dream_Scar
 Falcon_Knight
 Ferumbras
 Flimsy_Lost_Soul
@@ -37,6 +38,7 @@ Mutated_Rat
 Nightmare
 Orc_Berserker
 Orshabaal
+Phant
 Pirate_Ghost
 Quara_Raider
 Rashid

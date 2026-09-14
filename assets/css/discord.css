@@ -191,6 +191,23 @@
 .dc-btn.link { background: var(--dc-grey); }
 .dc-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 .dc-btn .e { width: 1.15em; height: 1.15em; vertical-align: -0.2em; }
+/* An emoji-only button (the notifications role row) is square-ish rather
+   than a pill with nothing in it. */
+.dc-btn.bare { padding: 0 12px; }
+.dc-btn.bare .e { width: 1.3em; height: 1.3em; margin: 0; }
+
+/* ------------------------------------------------- ephemeral reply */
+/* Discord's answer to a component press: visible only to whoever pressed,
+   and labelled as such. */
+.dc-eph {
+  margin-top: 8px; max-width: 440px;
+  border-left: 4px solid var(--dc-grey); border-radius: 4px;
+  background: rgba(78, 80, 88, 0.16); padding: 10px 14px;
+}
+.dc-eph .body { font-size: 14px; color: var(--dc-text); }
+.dc-eph .tag { font-size: 12px; color: var(--dc-muted); margin-top: 6px; }
+.dc-eph .tag span { color: var(--dc-link); cursor: pointer; }
+.dc-eph .tag span:hover { text-decoration: underline; }
 
 /* ------------------------------------------------------------ role chips */
 .dc-mention {
