@@ -101,12 +101,6 @@
   .rule::after { content: ''; flex: 1; height: 1px; background: var(--panel-border); }
   .rule .hash { color: var(--accent); }
 
-  /* The client alone breaks out of the 720px column. At 720 the sidebar
-     left roughly 440px of chat, which is narrower than Discord has ever
-     been and wrapped most death lines three ways. 960 gives it Discord's
-     own proportions, and every other section stays where it was. */
-  .wrap-wide { max-width: 960px; }
-
   /* ---- Channels: the mock Discord client ----
      The client itself is assets/css/discord.css; this is only what sits
      around it on the page. NOTE the two class names the skin had to avoid:
@@ -122,10 +116,7 @@
   }
   .chan-copy h3 { margin: 0 0 4px; font-size: 12.5px; color: var(--text-strong);
                   font-family: var(--mono); font-weight: 600; }
-  /* The panel spans the client, but the prose inside it keeps a readable
-     measure rather than running the full 960px. */
-  .chan-copy p { color: var(--muted); font-size: 13px; margin: 0; max-width: 82ch; }
-  .lede { max-width: 82ch; }
+  .chan-copy p { color: var(--muted); font-size: 13px; margin: 0; }
   .chan-copy b.good { color: var(--good); font-weight: 600; }
   .chan-copy b.bad { color: var(--bad); font-weight: 600; }
   .chan-copy b.mute { color: var(--muted); font-weight: 600; }
@@ -197,9 +188,7 @@
 
 <div class="wrap">
   <h2 class="rule" id="features"><span class="hash">##</span> channels</h2>
-</div>
 
-<div class="wrap wrap-wide">
   <p class="lede">
     Eight channels, one bot. Pick one &mdash; this is the real thing, not a screenshot.
   </p>
@@ -224,9 +213,7 @@
     <h3 id="chanBlurb"></h3>
     <p id="chanCopy"></p>
   </div>
-</div>
 
-<div class="wrap">
   <h2 class="rule" id="commands"><span class="hash">##</span> commands</h2>
 
   <div class="console">

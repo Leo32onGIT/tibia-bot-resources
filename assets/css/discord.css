@@ -91,8 +91,19 @@
 /* ---------------------------------------------------------------- shell */
 .dc {
   display: grid;
-  grid-template-columns: 208px 1fr;
-  height: 620px;
+  /* Discord's geometry at 13/16 scale, so the whole client shrinks
+     together rather than only the type. Discord: 16px text, 240px
+     sidebar, 48px header, 40px avatar in a 72px gutter, 520px embed cap,
+     80px thumbnail cap. Everything below is roughly that times 0.8125,
+     which is what lets it still read as Discord inside a 720px column.
+
+     The sidebar, gutter and thumbnail cap are trimmed slightly BELOW that
+     scale on purpose. 676px of page is less than Discord ever gets, and
+     every pixel those three give up goes to the description column — it
+     is the difference between the notifications roles reading as five
+     clean lines and as five lines with an orphaned word under each. */
+  grid-template-columns: 172px 1fr;
+  height: 600px;
   border-radius: 10px 10px 0 0;
   overflow: hidden;
   border: 1px solid var(--panel-border);
@@ -102,7 +113,7 @@
      lands on the vendored Noto Sans above, which is what Discord falls
      back to as well. */
   font-family: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.375;
   -webkit-font-smoothing: antialiased;
 }
@@ -116,8 +127,8 @@
 .dc-main { background: var(--dc-chat); }
 
 .dc-guild {
-  height: 48px; flex: none; display: flex; align-items: center; gap: 7px;
-  padding: 0 14px; color: var(--dc-strong); font-weight: 600; font-size: 15px;
+  height: 40px; flex: none; display: flex; align-items: center; gap: 7px;
+  padding: 0 12px; color: var(--dc-strong); font-weight: 600; font-size: 14px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2); cursor: default;
 }
 .dc-guild .dc-caret { margin-left: auto; color: var(--dc-inter); font-size: 11px; }
@@ -125,7 +136,7 @@
 .dc-chans { flex: 1; overflow-y: auto; padding: 8px 8px 20px; }
 .dc-cat {
   display: flex; align-items: center; gap: 4px;
-  padding: 16px 2px 4px; font-size: 11px; font-weight: 700;
+  padding: 14px 2px 4px; font-size: 10.5px; font-weight: 700;
   text-transform: uppercase; color: var(--dc-muted); cursor: default;
   line-height: 1.3;
 }
@@ -136,23 +147,23 @@
   background: none; color: var(--dc-muted); font: inherit; font-weight: 500;
   cursor: pointer; text-align: left; line-height: 1.25;
 }
-.dc-chan .h { font-size: 17px; font-weight: 400; color: #80848e; flex: none; line-height: 1; }
-.dc-chan .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.dc-chan .h { font-size: 15px; font-weight: 400; color: #80848e; flex: none; line-height: 1; }
+.dc-chan .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .dc-chan:hover { background: var(--dc-hover); color: var(--dc-text); }
 .dc-chan[aria-current="true"] { background: var(--dc-sel); color: var(--dc-strong); font-weight: 600; }
 .dc-chan[aria-current="true"] .h { color: var(--dc-strong); }
 
 /* ---------------------------------------------------------------- header */
 .dc-top {
-  height: 48px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  height: 40px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 16px;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.08); z-index: 2;
   color: var(--dc-strong); font-weight: 600;
 }
-.dc-top .h { font-size: 20px; font-weight: 400; color: #80848e; flex: none; }
+.dc-top .h { font-size: 17px; font-weight: 400; color: #80848e; flex: none; }
 .dc-top .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; max-width: 55%; }
 .dc-top .topic {
-  margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--dc-divider);
-  color: var(--dc-muted); font-size: 12px; font-weight: 400;
+  margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--dc-divider);
+  color: var(--dc-muted); font-size: 11px; font-weight: 400;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -164,17 +175,17 @@
 .dc-scroll::-webkit-scrollbar-track { background: #2b2d31; }
 
 /* --------------------------------------------------------------- message */
-.msg { padding: 2px 16px 2px 68px; position: relative; margin-top: 14px; }
+.msg { padding: 2px 12px 2px 50px; position: relative; margin-top: 13px; }
 .msg:hover { background: #2e3035; }
-.msg .av { position: absolute; left: 16px; top: 1px; width: 40px; height: 40px; border-radius: 50%; }
+.msg .av { position: absolute; left: 11px; top: 1px; width: 30px; height: 30px; border-radius: 50%; }
 .msg .hd { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; flex-wrap: wrap; }
-.msg .who { color: var(--dc-bot); font-weight: 500; font-size: 15px; }
+.msg .who { color: var(--dc-bot); font-weight: 500; font-size: 14px; }
 .msg .bot {
   background: var(--dc-blurple); color: #fff; font-size: 10px; font-weight: 500;
   border-radius: 3px; padding: 0 4px; height: 15px; line-height: 15px;
   display: inline-flex; align-items: center; gap: 2px; align-self: center;
 }
-.msg .ts { color: var(--dc-muted); font-size: 12px; font-weight: 500; }
+.msg .ts { color: var(--dc-muted); font-size: 11px; font-weight: 500; }
 
 /* ----------------------------------------------------------------- embed */
 /* Discord sizes an embed to its content and only then caps it, so the
@@ -186,15 +197,15 @@
      inline made two short embeds on one message sit side by side. Discord
      stacks them. */
   display: grid; grid-template-columns: 4px auto;
-  width: fit-content; max-width: 520px;
+  width: fit-content; max-width: 462px;
   margin-top: 4px; border-radius: 4px; overflow: hidden;
   background: var(--dc-embed);
 }
-.emb .in { padding: 8px 16px 16px 12px; display: grid; grid-template-columns: auto auto; gap: 12px; }
+.emb .in { padding: 7px 13px 13px 10px; display: grid; grid-template-columns: auto auto; gap: 10px; }
 .emb .body { min-width: 0; }
-.emb .etitle { font-size: 16px; font-weight: 600; color: var(--dc-link); margin-bottom: 4px; line-height: 1.375; }
+.emb .etitle { font-size: 14.5px; font-weight: 600; color: var(--dc-link); margin-bottom: 3px; line-height: 1.375; }
 .emb .etitle.plain { color: var(--dc-strong); }
-.emb .de { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
+.emb .de { font-size: 13px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
 /* Discord caps a thumbnail at 80x80 and scales DOWN to fit; it never
    scales up. Tibia sprites are 32 or 64 square, so forcing them into an
    80px box was inflating every one of them. max-* with auto keeps the
@@ -202,20 +213,20 @@
    Many sprites also carry transparent padding, which is what makes them
    look vertically centred against short text. */
 .emb .th {
-  max-width: 80px; max-height: 80px; width: auto; height: auto;
+  max-width: 56px; max-height: 56px; width: auto; height: auto;
   border-radius: 3px; align-self: start; image-rendering: pixelated;
 }
 .emb .big-img {
   grid-column: 1 / -1; width: 100%; max-height: 170px; object-fit: cover;
   border-radius: 4px; margin-top: 8px; image-rendering: pixelated;
 }
-.emb .foot { font-size: 12px; color: var(--dc-muted); margin-top: 8px; grid-column: 1 / -1; }
+.emb .foot { font-size: 11px; color: var(--dc-muted); margin-top: 8px; grid-column: 1 / -1; }
 
 /* embed fields — Discord lays inline fields out in a 3-up grid */
 .emb .fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
 .emb .fld.wide { grid-column: 1 / -1; }
-.emb .fld .fn { font-size: 14px; font-weight: 600; color: var(--dc-strong); margin-bottom: 2px; }
-.emb .fld .fv { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; }
+.emb .fld .fn { font-size: 13px; font-weight: 600; color: var(--dc-strong); margin-bottom: 2px; }
+.emb .fld .fv { font-size: 13px; color: var(--dc-text); white-space: pre-wrap; }
 
 /* markdown inside a description */
 .emb a, .dc-md a { color: var(--dc-link); text-decoration: none; font-weight: 600; }
@@ -230,13 +241,13 @@
    post both lean on for their section structure. */
 /* Discord gives a markdown heading real room above it — without it the
    boosted post reads as one run-on line instead of a label and an answer. */
-.emb .h2 { font-size: 20px; font-weight: 700; color: var(--dc-strong); margin: 16px 0 8px; line-height: 1.3; }
-.emb .h3 { font-size: 16px; font-weight: 700; color: var(--dc-strong); margin: 16px 0 4px; line-height: 1.3; }
+.emb .h2 { font-size: 17px; font-weight: 700; color: var(--dc-strong); margin: 14px 0 6px; line-height: 1.3; }
+.emb .h3 { font-size: 14px; font-weight: 700; color: var(--dc-strong); margin: 14px 0 3px; line-height: 1.3; }
 .emb .h2.first, .emb .h3.first { margin-top: 0; }
 
 /* plain (non-embed) message body, used by the online list */
-.dc-md { font-size: 14px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
-.dc-md .h3 { font-size: 16px; font-weight: 700; color: var(--dc-strong); margin: 16px 0 4px; line-height: 1.3; }
+.dc-md { font-size: 13px; color: var(--dc-text); white-space: pre-wrap; word-wrap: break-word; }
+.dc-md .h3 { font-size: 14px; font-weight: 700; color: var(--dc-strong); margin: 14px 0 3px; line-height: 1.3; }
 .dc-md .h3.first { margin-top: 0; }
 
 /* ----------------------------------------------------------------- emoji */
@@ -248,11 +259,11 @@
 .emb .etitle .e { width: 1.3em; height: 1.3em; vertical-align: -0.25em; }
 
 /* --------------------------------------------------------------- buttons */
-.dc-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; max-width: 440px; }
+.dc-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; max-width: 462px; }
 .dc-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  border: 0; border-radius: 3px; padding: 0 16px; height: 32px;
-  font: inherit; font-size: 14px; font-weight: 500; color: #fff;
+  border: 0; border-radius: 3px; padding: 0 13px; height: 28px;
+  font: inherit; font-size: 13px; font-weight: 500; color: #fff;
   cursor: pointer; transition: background-color 0.15s ease;
 }
 .dc-btn.primary { background: var(--dc-blurple); }
@@ -275,12 +286,12 @@
 /* Discord's answer to a component press: visible only to whoever pressed,
    and labelled as such. */
 .dc-eph {
-  margin-top: 8px; max-width: 440px;
+  margin-top: 8px; max-width: 462px;
   border-left: 4px solid var(--dc-grey); border-radius: 4px;
   background: rgba(78, 80, 88, 0.16); padding: 10px 14px;
 }
-.dc-eph .body { font-size: 14px; color: var(--dc-text); }
-.dc-eph .tag { font-size: 12px; color: var(--dc-muted); margin-top: 6px; }
+.dc-eph .body { font-size: 13px; color: var(--dc-text); }
+.dc-eph .tag { font-size: 11px; color: var(--dc-muted); margin-top: 6px; }
 .dc-eph .tag span { color: var(--dc-link); cursor: pointer; }
 .dc-eph .tag span:hover { text-decoration: underline; }
 
@@ -319,10 +330,10 @@
 .fr-post .pill .dot { width: 7px; height: 7px; border-radius: 50%; }
 .fr-post .pill.free { background: rgba(46, 204, 113, 0.15); color: #3ecf8e; }
 .fr-post .pill.claimed { background: rgba(218, 55, 60, 0.15); color: #f0777a; }
-.fr-post .pt { font-size: 15px; font-weight: 600; color: var(--dc-strong); line-height: 1.3; }
+.fr-post .pt { font-size: 14px; font-weight: 600; color: var(--dc-strong); line-height: 1.3; }
 .fr-post .pm { font-size: 12px; color: var(--dc-muted); margin-top: 4px; }
 .fr-post .pm b { color: var(--dc-bot); font-weight: 500; }
-.fr-post .pic { width: 60px; height: 60px; object-fit: contain; border-radius: 4px; image-rendering: pixelated; }
+.fr-post .pic { width: 52px; height: 52px; object-fit: contain; border-radius: 4px; image-rendering: pixelated; }
 .fr-open { grid-column: 1 / -1; margin-top: 4px; }
 
 /* ------------------------------------------------------- arrival flash */
