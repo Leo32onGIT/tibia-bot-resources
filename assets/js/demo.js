@@ -32,6 +32,9 @@ var UNI = {
   robot:          ['1f916', '🤖'],
   dagger:         ['1f5e1', '🗡️'],
   crossed_swords: ['2694',  '⚔️'],
+  link:           ['1f517', '🔗'],
+  green_circle:   ['1f7e2', '🟢'],
+  yellow_circle:  ['1f7e1', '🟡'],
   scissors:       ['2702',  '✂️']
 };
 
@@ -61,7 +64,20 @@ var CUSTOM = {
   bounty:     'bounty',       /* <:bounty:1537339697624256524>     */
   archfoe:    'archfoe',      /* <:archfoe:1024710113728155738>    */
   drome:      'drome',        /* <:drome:1507620940278923294>      */
-  dreamscar:  'dreamscar.gif' /* <a:dreamscar:1504728980010438717> */
+  dreamscar:  'dreamscar.gif', /* <a:dreamscar:1504728980010438717> */
+  /* The statistics post. `news` leads the date, `lvldown` is experience
+     LOST (the board uses a different icon from the one for gained, which
+     is what lets the direction read before the number does), and
+     `skillshield` is SkillEmojis.icon for a Shielding advance. */
+  news:        'news.gif',      /* <a:news:1547509125951389727>      */
+  lvldown:     'lvldown',       /* <:lvldown:1547314973213196289>    */
+  skillshield: 'skillshield.gif', /* <a:shield:1546168089207373856>  */
+  /* Bar segments. Discord leaves a gap between adjacent custom emoji, so
+     a bar cannot be tiled from one piece — it needs a rounded start,
+     square middles and a rounded end, three shapes per colour. */
+  green_start: 'green_start', green_mid: 'green_mid', green_end: 'green_end',
+  red_start:   'red_start',   red_mid:   'red_mid',   red_end:   'red_end',
+  empty_start: 'empty_start', empty_mid: 'empty_mid', empty_end: 'empty_end'
 };
 var EMOJI_DIR = 'assets/img/emoji/';
 
@@ -109,19 +125,26 @@ function rel(sec) {
 }
 function relFuture(sec) {
   var a = Math.max(1, Math.round(sec));
-  if (a < 60) return 'in ' + a + ' seconds';
+  if (a < 60) return 'in ' + a + ' second' + (a === 1 ? '' : 's');
   var m = Math.round(a / 60);
   if (m < 60) return 'in ' + m + ' minute' + (m === 1 ? '' : 's');
   var h = Math.round(m / 60);
   if (h < 24) return 'in ' + h + ' hour' + (h === 1 ? '' : 's');
-  return 'in ' + Math.round(h / 24) + ' days';
+  var d = Math.round(h / 24);
+  return 'in ' + d + ' day' + (d === 1 ? '' : 's');
 }
 
 function md(text, ago) {
   var s = esc(text);
+  /* <t:N:R> where N is an OFFSET, not an epoch:
+       0        the message's own age (every death and level line)
+       positive that far ahead   -> "in 2 days"
+       negative that far behind  -> "3 hours ago" */
   s = s.replace(/&lt;t:(-?\d+):R&gt;/g, function (_, n) {
     var off = parseInt(n, 10);
-    return off > 0 ? relFuture(off) : rel(ago);
+    if (off > 0) return relFuture(off);
+    if (off < 0) return rel(-off);
+    return rel(ago);
   });
   s = s.replace(/&lt;a?:([a-z_]+):\d*&gt;/g, function (_, n) { return custom(n); });
   s = s.replace(/:([a-z_]+):/g, function (m0, n) { return UNI[n] ? uni(n) : m0; });
@@ -956,10 +979,15 @@ Demos.stats = (function () {
     var icon = sideIcon(c);
     return vc(c.voc) + ' **[' + c.name + '](#)**' + (icon ? ' ' + icon : '');
   }
+  /* presentation/StatLines.Dot */
+  var DOT = ' · ';
   function cells() {
-    return [].slice.call(arguments).filter(Boolean).join(' · ');
+    return [].slice.call(arguments).filter(Boolean).join(DOT);
   }
-  var XP_UP = '<:levelup:>', XP_DOWN = '<:levelup:>';
+  /* Two DIFFERENT icons. The board shows no sign on the figure — the
+     rising and falling icons are what say which direction it went, so
+     using levelup for both made every loss read as a gain. */
+  var XP_UP = '<:levelup:>', XP_DOWN = '<:lvldown:>';
 
   var day = (function () {
     var d = new Date(Date.now() - 86400000);
@@ -1001,8 +1029,49 @@ Demos.stats = (function () {
              repeat: take(250), topKill: take(400) };
   })();
 
+  /* The day's frags, as presentation/Bars reads them: each side's summed
+     victim levels and its body count, against what an ordinary character
+     on this world is worth and what a full bar costs. */
+  var FRAGS = {
+    enemiesKilled: 14, enemyLevels: 5600,
+    alliesKilled: 6,   allyLevels: 2100,
+    referenceLevel: 250,  /* the world's average level      */
+    ceiling: 110          /* Bars.ceilingFor(~1100 online)  */
+  };
+
+  /* presentation/Bars.split, ported.
+
+     Twelve segments. How much is coloured says how big the day was on a
+     log scale — a handful of frags is a real day and should look like
+     one, while forty versus fifty is worth almost nothing. Where the
+     colour changes says who won: green is enemies killed, red is allies.
+     Neither side vanishes while it has anything at all, because a bar
+     that reads as a clean sweep on a day somebody died is a lie. */
+  function weigh(levels, deaths, reference) {
+    return levels > 0 ? levels / Math.max(1, reference) : deaths;
+  }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function bar(f, segments) {
+    segments = segments || 12;
+    var left = weigh(f.enemyLevels, f.enemiesKilled, f.referenceLevel);
+    var right = weigh(f.allyLevels, f.alliesKilled, f.referenceLevel);
+    var total = left + right;
+    var filled = total <= 0 ? 0
+      : clamp(Math.round(Math.log(1 + total) / Math.log(1 + Math.max(2, f.ceiling)) * segments), 1, segments);
+    var leftSegments = total <= 0 ? 0
+      : clamp(Math.round(left / total * filled), left > 0 ? 1 : 0, filled - (right > 0 ? 1 : 0));
+    var out = '';
+    for (var i = 0; i < segments; i++) {
+      var colour = i < leftSegments ? 'green' : i < filled ? 'red' : 'empty';
+      var shape = i === 0 ? 'start' : i === segments - 1 ? 'end' : 'mid';
+      out += '<:' + colour + '_' + shape + ':>';
+    }
+    return out;
+  }
+
   function build() {
-    var lines = ['## <:daily:> [' + day + '](#)', '### Top Experience Gained'];
+    var lines = ['## <a:news:> [' + day + '](#)', '### Top Experience Gained'];
     board.gains.forEach(function (g) {
       lines.push(cells(who(g.c), '*' + g.c.level + '*',
                        XP_UP + ' **' + g.xp.toLocaleString('en-US') + '**'));
@@ -1013,11 +1082,15 @@ Demos.stats = (function () {
                        XP_DOWN + ' **' + g.xp.toLocaleString('en-US') + '**'));
     });
     lines.push('### Top Skill Advancement');
-    lines.push(cells(who(board.skill), '*' + board.skill.level + '*', 'reached **Shielding 121**'));
+    /* HighscoreCategory.advancement: "{label} level **{score}**",
+       led by SkillEmojis.icon for the category. */
+    lines.push(cells(who(board.skill), '*' + board.skill.level + '*',
+                     '<a:skillshield:> Shielding level **121**'));
 
     var pvp = [
       '## :dagger: PVP',
-      '**14** enemies killed vs **6** allies killed',
+      bar(FRAGS),
+      '**' + FRAGS.enemiesKilled + '** enemies killed vs **' + FRAGS.alliesKilled + '** allies killed',
       '### Most Kills'
     ];
     [5, 4, 3].forEach(function (n, i) {
@@ -1026,7 +1099,7 @@ Demos.stats = (function () {
     pvp.push('### Most Deaths');
     pvp.push(cells(who(board.repeat), '*' + board.repeat.level + '*', '**3 deaths**'));
     pvp.push('### Top Enemy Killed');
-    pvp.push(cells(who(board.topKill), '*' + board.topKill.level + '*', '[jump](#)'));
+    pvp.push(cells(who(board.topKill), '*' + board.topKill.level + '*', '[:link:](#)'));
 
     var creatures = [
       '## <:creature:> Creature Kills',
@@ -1039,12 +1112,25 @@ Demos.stats = (function () {
       '**3** [Plunder Patriarchs](#)'
     ];
 
+    /* presentation/BossPredictionEmbeds — which bosses history says could
+       be up today. A green dot is a high chance, yellow a maybe; the count
+       after a name is how many of that boss's spawn points are due, since
+       "two of four Rotworm Queens" is a different trip from one. */
+    var bosses = [
+      '## <:boss:> Bosses Due',
+      ':green_circle: <:nemesis:> **Ferumbras**' + DOT + 'window closes <t:172800:R>',
+      ':green_circle: <:nemesis:> **Zulazza the Corruptor**' + DOT + 'overdue since <t:-10800:R>',
+      ':yellow_circle: <:nemesis:> **Rotworm Queen** ×2' + DOT + 'opens <t:86400:R>',
+      ':yellow_circle: <:nemesis:> **Ghazbaran**' + DOT + 'opens <t:259200:R>'
+    ];
+
     return [{
       ago: 7400,
       embeds: [
         { color: C.green,  desc: lines.join('\n') },
         { color: C.red,    desc: pvp.join('\n') },
-        { color: C.yellow, desc: creatures.join('\n') }
+        { color: C.yellow, desc: creatures.join('\n') },
+        { color: C.purple, desc: bosses.join('\n'), footer: '3 boss(es) not yet predicted' }
       ]
     }];
   }
