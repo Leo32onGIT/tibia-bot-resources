@@ -101,7 +101,7 @@ function cardHTML(s) {
   var live = row.state === 'claimed';
   var done = live ? Math.min(1, Math.max(0, 1 - row.left / Math.max(1, row.mins * 60))) : 0;
   var art = s.creature ? '<img class="sprite" src="' + creatureImg(s.creature) + '" alt="">' : '';
-  var tick = row.state === 'confirmed' ? '<i class="ti ti-check tick" aria-hidden="true"></i>' : '';
+  var tick = row.state === 'confirmed' ? '<svg class="ic tick" aria-hidden="true"><use href="#i-check"/></svg>' : '';
   var queue = row.queue ? '<span class="queue">+' + row.queue + ' queued</span>' : '';
   var bar = live
     ? '<div class="card-bar"><span style="width:' + (done * 100).toFixed(1) + '%"></span></div>'
@@ -401,7 +401,7 @@ function weekHTML(s, row) {
             '<button>This week</button>' +
             '<button aria-label="Forward a week">&rsaquo;</button>' +
           '</span>' +
-          '<button class="btn-ghost"><i class="ti ti-crosshair" aria-hidden="true"></i> Now</button>' +
+          '<button class="btn-ghost"><svg class="ic" aria-hidden="true"><use href="#i-crosshair"/></svg> Now</button>' +
         '</span>' +
       '</div>' +
       '<div class="cal-legend">' +
@@ -523,9 +523,9 @@ function renderWindow() {
         '</span>' +
       '</div>' +
       '<div class="readout-actions">' +
-        '<button class="' + cls + '"><i class="ti ti-' +
+        '<button class="' + cls + '"><svg class="ic" aria-hidden="true"><use href="#i-' +
           (label === 'Claim' ? 'flag' : label === 'Leave' ? 'door-exit' : 'calendar-plus') +
-        '" aria-hidden="true"></i>' + label + '</button>' +
+        '"/></svg>' + label + '</button>' +
       '</div>' +
     '</div>';
 }

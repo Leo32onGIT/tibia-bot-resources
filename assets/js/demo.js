@@ -17,8 +17,8 @@
    ===================================================================== */
 
 /* Discord renders Unicode emoji as Twemoji, so a system font would look
-   wrong on Windows in particular. Vendored under assets/img/twemoji/. */
-var TW = 'assets/img/twemoji/';
+   wrong on Windows in particular. Vendored under assets/img/demo/twemoji/. */
+var TW = 'assets/img/demo/twemoji/';
 var UNI = {
   shield:         ['1f6e1', '🛡️'],
   snowflake:      ['2744',  '❄️'],
@@ -89,7 +89,7 @@ var CUSTOM = {
   bakragore:  'bakragore.gif',  /* <a:bakragore:1547928812388622366>  */
   primal:     'primal.gif'      /* <a:primal:1548281927155458099>     */
 };
-var EMOJI_DIR = 'assets/img/emoji/';
+var EMOJI_DIR = 'assets/img/demo/emoji/';
 
 function uni(name, big) {
   var m = UNI[name];
@@ -245,7 +245,7 @@ var RANKS = ['Leader', 'Vice Leader', 'Warloyal', 'One', 'Veteran', 'Recruit', '
 
 /* Creature sprites. `f` is the TibiaWiki file name the bot would build
    via Urls.creatureFileName; the site serves a vendored copy of it from
-   assets/img/creatures/. `lo`/`hi` band the levels it plausibly kills,
+   assets/img/demo/creatures/. `lo`/`hi` band the levels it plausibly kills,
    so a generated death never reads as nonsense (a level-8 druid is not
    killed by a Juggernaut). */
 var CREATURES = [
@@ -312,7 +312,7 @@ var EFFECTS = [
 var PVP_GIF = 'Phantasmal_Ooze.gif';
 var SUICIDE_GIF = 'Ghost_Smoke_Effect.gif';
 
-function creatureImg(f) { return 'assets/img/creatures/' + f + '.gif'; }
+function creatureImg(f) { return 'assets/img/demo/creatures/' + f + '.gif'; }
 
 /* Respawns, verbatim rows from tibia-bot/src/main/resources/respawns.json.
    displayName is "{code} — {name}" (RespawnEmbeds.claimCard). */
@@ -1521,7 +1521,7 @@ Demos.spawns = (function () {
           ? '<div class="fr-open">' +
               embedHTML({ color: C.purple, title: 'Respawn Claims', desc: BOARD.intro,
                           thumb: 'assets/img/avatar.png',
-                          image: 'assets/img/respawn-codes.png' }, 0) +
+                          image: 'assets/img/demo/respawn-codes.png' }, 0) +
               buttonsHTML(BOARD.buttons) +
             '</div>'
           : '') +

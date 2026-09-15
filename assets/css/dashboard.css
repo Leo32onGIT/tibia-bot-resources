@@ -10,7 +10,7 @@
 
    Everything is scoped under .db. Several of board.html's class names
    (.card, .panel, .dot, .who) are generic enough to collide with a page
-   that grows, and the Tabler/.ti collision already cost us once.
+   that grows, and a collision of exactly that kind already cost us once.
    ===================================================================== */
 
 .db {
@@ -40,7 +40,7 @@
   display: inline-flex; align-items: center; gap: 6px;
   color: var(--text-strong); font-weight: 600; font-size: 14px;
 }
-.db-brand .server .ti { color: var(--muted); font-size: 14px; }
+.db-brand .server .ic { color: var(--muted); }
 .db-brand .path { color: var(--muted); font-weight: 400; }
 .db-brand .sub {
   display: block; font-size: 10px; font-weight: 400; color: var(--muted);
@@ -81,7 +81,6 @@
   font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
 }
 .db-fold:hover { background: rgba(255, 255, 255, 0.02); }
-.db-fold .ti-shield-half { color: var(--purple); font-size: 15px; }
 .db-fold .chev { margin-left: auto; color: var(--muted); font-size: 13px; transition: transform 0.15s ease; }
 .db-panel.open .db-fold .chev { transform: rotate(180deg); }
 .db-fold-body { display: none; padding: 0 15px 14px; }
