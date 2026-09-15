@@ -168,11 +168,49 @@
 }
 
 .dc-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 0 20px; }
+
+/* Discord's thin scroller, which is how both of these scroll in the real
+   client. The gutter is eight pixels but the thumb is four: it carries a
+   two-pixel transparent border and clips its own background to the
+   padding box, so the bar is narrow while the target you can grab stays
+   the full width. The track is transparent — a painted one draws a grey
+   channel down the side of the panel for as long as it is scrollable,
+   which is what made these read as heavier than the client's.
+
+   Deliberately no `scrollbar-width: thin` here. Declaring it hands the
+   whole scrollbar to the engine's own thin rendering and takes these
+   rules out of play, and the engine's idea of thin is ten pixels — wider
+   than Discord's eight, and without the inset that makes the thumb read
+   as a hairline. Firefox, which has no ::-webkit-scrollbar to honour,
+   gets it below instead. */
 .dc-scroll::-webkit-scrollbar,
-.dc-chans::-webkit-scrollbar { width: 8px; }
+.dc-chans::-webkit-scrollbar { width: 8px; height: 8px; }
+.dc-scroll::-webkit-scrollbar-track,
+.dc-chans::-webkit-scrollbar-track { background: transparent; }
 .dc-scroll::-webkit-scrollbar-thumb,
-.dc-chans::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 4px; }
-.dc-scroll::-webkit-scrollbar-track { background: #2b2d31; }
+.dc-chans::-webkit-scrollbar-thumb {
+  background: #1a1b1e; background-clip: padding-box;
+  border: 2px solid transparent; border-radius: 4px;
+}
+.dc-scroll::-webkit-scrollbar-corner,
+.dc-chans::-webkit-scrollbar-corner { background: transparent; }
+
+/* The channel list keeps its thumb out of sight until a pointer is over
+   the sidebar, as Discord's does — the names are the thing, and a bar
+   parked beside them the whole time is one more edge to read past. */
+.dc-chans::-webkit-scrollbar-thumb { background-color: transparent; }
+.dc-side:hover .dc-chans::-webkit-scrollbar-thumb { background-color: #1a1b1e; }
+
+/* Engines with no ::-webkit-scrollbar to apply — Firefox — where the
+   standard properties are the only way to say any of this. Thin is the
+   closest it offers, and `scrollbar-color` carries the thumb and the
+   transparent track. Kept behind the query so it never reaches an engine
+   that would take it in preference to the rules above. */
+@supports not selector(::-webkit-scrollbar) {
+  .dc-scroll { scrollbar-width: thin; scrollbar-color: #1a1b1e transparent; }
+  .dc-chans { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  .dc-side:hover .dc-chans { scrollbar-color: #1a1b1e transparent; }
+}
 
 /* --------------------------------------------------------------- message */
 .msg { padding: 2px 12px 2px 50px; position: relative; margin-top: 13px; }
