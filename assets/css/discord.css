@@ -2,8 +2,10 @@
    Discord client skin.
 
    A faithful-enough reproduction of Discord's current dark theme, sized
-   to sit inside the site's 720px column. Everything here is presentation
-   only — the demos in assets/js/demo.js decide what goes in it.
+   to sit inside the site's column — which is fluid, so the client caps
+   itself rather than taking whatever it is given. Everything here is
+   presentation only — the demos in assets/js/demo.js decide what goes
+   in it.
 
    Channel names, categories and colours are taken from the bot itself
    (tibia-bot @ dev); see demo.js for the per-value citations.
@@ -95,15 +97,33 @@
      together rather than only the type. Discord: 16px text, 240px
      sidebar, 48px header, 40px avatar in a 72px gutter, 520px embed cap,
      80px thumbnail cap. Everything below is roughly that times 0.8125,
-     which is what lets it still read as Discord inside a 720px column.
+     which is what lets it still read as Discord rather than as a dark
+     web page.
 
-     The sidebar, gutter and thumbnail cap are trimmed slightly BELOW that
-     scale on purpose. 676px of page is less than Discord ever gets, and
-     every pixel those three give up goes to the description column — it
-     is the difference between the notifications roles reading as five
-     clean lines and as five lines with an orphaned word under each. */
-  grid-template-columns: 172px 1fr;
-  height: 600px;
+     The sidebar is that scale exactly — 240 x 0.8125. It used to be 172,
+     trimmed below scale to buy the description column room back when the
+     page was a fixed 720px and the client got 676 of it; the column is
+     fluid now and that debt is paid. The avatar gutter and the thumbnail
+     cap are still a little under scale, which is cheap and still buys
+     the same room.
+
+     Width is the column's, and the column is sized to this client — see
+     the .wrap comment in site.css. There is no max-width here because
+     there is nothing left to cap it against.
+
+     Height is measured from #notifications, the one channel whose
+     content is fixed rather than accumulating. Its Server Save
+     Notifications button ends 718px into the feed and the feed's own
+     bottom padding takes it to 740, so the feed needs 740, the channel
+     header 40 and the two borders 2 — and the few over that are slack,
+     because a client that lands exactly on its content grows a scrollbar
+     the moment a font renders a pixel taller somewhere else.
+
+     Deliberately not a vh: a share of a tall monitor cannot also be the
+     height of a particular button. The longer feeds scroll, which is
+     what a feed does — this is the one that should not have to. */
+  grid-template-columns: 195px 1fr;
+  height: 790px;
   /* Fully enclosed: nothing is attached beneath it any more. */
   border-radius: 10px;
   overflow: hidden;

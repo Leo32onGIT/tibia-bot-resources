@@ -842,10 +842,23 @@ Demos.levels = (function () {
   function fx(i) { if (!pool[i]) pool[i] = make(i); return pool[i]; }
 
   var posted = [];
+  /* Sixteen of these left the channel a third empty once the client grew
+     to the height #notifications needs. Eighteen fills it, reaching an
+     hour and three quarters back instead of just over one.
+
+     The two extra are bought by starting further back rather than by
+     slowing the decay, and that is the part worth writing down: the
+     decay is also what does the grouping. Discord merges consecutive
+     posts under one header, and build() below follows it whenever two
+     advances land within 400 seconds — so flattening the curve to fit
+     more in pushes the gaps back over that line and the channel gains
+     rows of header instead of rows of names. Twenty-two on a 0.12 decay
+     came out as thirteen messages and overshot the fold by 171px;
+     eighteen on this one is ten messages and lands 16px inside it. */
   (function seed() {
-    var t = 4200;
-    for (var i = 0; i < 16; i++) { posted.push({ i: i, ago: t }); t -= Math.round(t * 0.15) + 60; }
-    cursor = 16;
+    var t = 6400;
+    for (var i = 0; i < 18; i++) { posted.push({ i: i, ago: t }); t -= Math.round(t * 0.15) + 60; }
+    cursor = 18;
   })();
 
   function visible(p) {
@@ -880,7 +893,9 @@ Demos.levels = (function () {
     tick: function () {
       posted.forEach(function (p) { p.ago += 6; });
       posted.push({ i: cursor++, ago: 2 });
-      if (posted.length > 22) posted.shift();
+      /* Six past the seed, as before: the channel keeps arriving for a
+         while after it is full, then holds a constant length. */
+      if (posted.length > 24) posted.shift();
     }
   };
 })();

@@ -39,7 +39,19 @@ body {
     linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px);
   background-size: 46px 46px;
 }
-.wrap { max-width: 720px; margin: 0 auto; padding: 0 22px; }
+/* 820 is the Discord client's number, and the column is built around it
+   rather than the other way round. A client is full at its 195px sidebar
+   plus 62px of message padding plus the 462px its embeds cap at — about
+   720 — and 776px of content leaves that a little slack. Past it the
+   messages do not grow and the extra becomes empty chat beside them.
+
+   Everything else on the page shares that width because nothing else
+   gains by breaking it: the command table is a fixed two columns, and
+   prose set wider is prose whose next line the eye has to go looking
+   for. The one exception is the respawn board, which breaks out on its
+   own in dashboard.css — twelve spawns really are better as four columns
+   than as two. */
+.wrap { max-width: 820px; margin: 0 auto; padding: 0 22px; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .mono { font-family: var(--mono); }
