@@ -1373,8 +1373,18 @@ Demos.notify = (function () {
 
 /* ---------------------------------------------------------------------
    #command-log — AdminLog.scala, TibiaBot.scala:1364
-   The replay is the demo: an ally dies, and the killer is added to the
-   hunted list without anybody running a command.
+   The replay is the demo: an ally is killed somewhere off screen, and
+   three enemies land on the hunted list without anybody running a
+   command.
+
+   Off screen is the point. The death itself belongs to #deaths and the
+   bot posts it there; this channel carries what the bot DID about it.
+   The demo used to replay the death embed here first, to show what
+   triggered the additions — but a death feed post in the command log is
+   a thing the bot never does, and a demo that shows it teaches the wrong
+   shape. Each addition already names the player who was killed, so the
+   trigger is on screen anyway, in the form this channel really carries
+   it.
    ------------------------------------------------------------------ */
 Demos.log = (function () {
   var st = { step: 0 };
@@ -1415,20 +1425,6 @@ Demos.log = (function () {
       });
 
       if (st.step >= 1) {
-        msgs.push({
-          ago: 40, replay: true,
-          embeds: [{
-            color: C.red,
-            title: vc(VICTIM.voc) + ' ' + VICTIM.name + ' ' + vc(VICTIM.voc),
-            desc: guildLine(VICTIM).slice(0, -1) + '\nKilled <t:0:R> at level ' + VICTIM.level +
-                  '\nby ' + KILLERS.map(function (k) { return '**[' + k.name + ' [' + k.level + ']](#features)**'; })
-                    .slice(0, -1).join(', ') + ' and **[' + KILLERS[KILLERS.length - 1].name +
-                  ' [' + KILLERS[KILLERS.length - 1].level + ']](#features)**.',
-            thumb: PVP_GIF
-          }]
-        });
-      }
-      if (st.step >= 2) {
         KILLERS.forEach(function (k, i) {
           msgs.push({
             ago: 20 - i * 4,
@@ -1445,15 +1441,17 @@ Demos.log = (function () {
       return msgs;
     },
     tick: null,
-    /* Opening the channel plays the chain: an ally is killed, and a beat
-       later the bot adds every killer to the hunted list on its own. It
-       used to be behind a Play button in the control strip; with that gone
-       the channel tells its own story instead of sitting still. */
+    /* Opening the channel plays the chain: three entries of ordinary
+       history, then a beat, then the bot adding every killer to the
+       hunted list on its own. It used to be behind a Play button in the
+       control strip; with that gone the channel tells its own story
+       instead of sitting still. The beat is what carries the point — the
+       additions arrive after you have read the channel, so they read as
+       something happening rather than as more of the backlog. */
     onEnter: function (step) {
       st.step = 0;
       step(0);
-      setTimeout(function () { step(1); }, 900);
-      setTimeout(function () { step(2); }, 2800);
+      setTimeout(function () { step(1); }, 1400);
     },
     setStep: function (n) { st.step = n; }
   };
