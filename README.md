@@ -26,6 +26,7 @@ discord/                artwork the bot links to from its embeds
   avatar.png            every embed's author icon
   effects/              death-notification thumbnails
   events/               guild join/leave/swap, world transfer, name change
+  observer/             mini world change thumbnail
 ```
 
 Nothing under `assets/` is fetched by the bot, and nothing under
