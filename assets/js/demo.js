@@ -38,7 +38,8 @@ var UNI = {
   calendar:       ['1f4c5', '📅'],
   globe:          ['1f310', '🌐'],
   pushpin:        ['1f4cc', '📌'],
-  scissors:       ['2702',  '✂️']
+  scissors:       ['2702',  '✂️'],
+  camera:         ['1f4f7', '📷']
 };
 
 /* Custom server emoji, ids verbatim from
@@ -61,6 +62,7 @@ var CUSTOM = {
   boss:       'boss',         /* <:boss:1195770698401075281>       */
   creature:   'creature',     /* <:creature:1548349730650591233>   */
   masslog:    'masslog',      /* <:masslog:1505437547717988503>    */
+  yes:        'yes',          /* <:yes:1135988738565099550>        */
   /* The notifications channel's five role icons and the server-save block. */
   inq:        'inq',          /* <:inq:1025103806851199078>        */
   hazard:     'hazard',       /* <:hazard:1148373566077816922>     */
@@ -615,13 +617,14 @@ function ephemeralHTML(text) {
    Discord groups consecutive posts by the same author, which the demos
    reproduce by marking a message `join: true`. */
 function messageHTML(m, flash) {
-  var h = '<div class="msg' + (flash ? ' new' : '') + '">' +
+  var h = '<div class="msg' + (m.join ? ' join' : '') + (flash ? ' new' : '') + '">' +
+          (m.join ? '' :
             '<img class="av" src="assets/img/avatar.png" alt="" data-fb="">' +
             '<div class="hd">' +
               '<span class="who">Violent Bot</span>' +
               '<span class="bot">&#10003; BOT</span>' +
               '<span class="ts">' + clock(m.ago) + '</span>' +
-            '</div>';
+            '</div>');
   if (m.text) h += '<div class="dc-md">' + md(m.text, m.ago) + '</div>';
   (m.embeds || []).forEach(function (e) { h += embedHTML(e, m.ago); });
   if (m.buttons) h += buttonsHTML(m.buttons);
@@ -680,11 +683,12 @@ var Demos = {};
    #deaths — TibiaBot.scala:1078-1325, presentation/DeathEmbeds.scala
    ------------------------------------------------------------------ */
 Demos.deaths = (function () {
-  /* No control strip any more, so these are what the channel shows.
-     exiva is on because the block is worth seeing; 20 is the bot's own
-     default for deaths_min. */
-  var st = { min: 20, exiva: true, neutral: 'show' };
+  /* No control strip any more, so these are what the channel shows;
+     20 is the bot's own default for deaths_min. */
+  var st = { min: 20, neutral: 'show' };
   var pool = [], cursor = 0;
+  var revealed = {}, shot = {};
+  var PING = { allypk: 'PVP', nemesis: 'Rare Boss', fullbless: 'Fullbless' };
 
   function make(i) {
     var r = rng(i * 7919 + 13);
@@ -750,8 +754,13 @@ Demos.deaths = (function () {
       thumb = creatureImg(cr.f);
     }
 
+    /* TibiaBot's notablePoke: which role is pinged, and which button goes under. */
+    var kind = pvp ? (c.side === 'ally' ? 'allypk' : c.side === 'enemy' ? 'screenshot' : '')
+             : boss ? 'nemesis'
+             : c.side === 'enemy' && lvl >= 250 ? 'fullbless' : '';
+
     return {
-      side: c.side, lvl: lvl, col: col, voc: c.voc, name: c.name, thumb: thumb, exiva: exiva,
+      side: c.side, lvl: lvl, col: col, voc: c.voc, name: c.name, thumb: thumb, exiva: exiva, kind: kind,
       desc: guildLine(c) + verb + ' <t:0:R> at level ' + lvl + '\nby ' + killers + '.'
     };
   }
@@ -787,26 +796,37 @@ Demos.deaths = (function () {
 
   return {
     ch: 'deaths',
+    /* One message per death, as the bot posts them; Discord runs them
+       together under one header. */
     build: function () {
       var shown = posted.filter(visible);
       if (!shown.length) return null;
-      var out = [], last = null, count = 0;
-      shown.forEach(function (p) {
+      return shown.map(function (p, n) {
         var f = fx(p.i);
         var d = f.desc;
-        if (st.exiva && f.side === 'ally' && f.exiva) {
-          f.exiva.forEach(function (n, k) {
-            d += '\n' + (k === 0 ? '<:exiva:>' : '<:indent:>') + ' `exiva "' + n + '"`';
+        if (revealed[p.i]) {
+          f.exiva.forEach(function (name, k) {
+            d += '\n' + (k === 0 ? '<:exiva:>' : '<:indent:>') + ' `exiva "' + name + '"`';
           });
         }
-        var e = {
-          color: f.col, title: vc(f.voc) + ' ' + f.name + ' ' + vc(f.voc),
-          desc: d, thumb: f.thumb, tsAgo: p.ago
+        var m = {
+          ago: p.ago, join: n > 0,
+          text: PING[f.kind] ? '@' + WORLD + ' ' + PING[f.kind] + '@' : null,
+          embeds: [{ color: f.col, title: vc(f.voc) + ' ' + f.name + ' ' + vc(f.voc), desc: d, thumb: f.thumb }]
         };
-        if (last && count < 4 && Math.abs(last.ago - p.ago) < 26) { last.embeds.push(e); count++; }
-        else { last = { ago: p.ago, embeds: [e] }; out.push(last); count = 1; }
+        if (f.kind === 'allypk' && !revealed[p.i]) m.buttons = [{ emoji: 'exiva', act: 'exiva:' + p.i }];
+        if (f.kind === 'screenshot') {
+          m.buttons = [{ emoji: 'camera', act: 'shot:' + p.i }];
+          if (shot[p.i]) m.ephemeral = '<:yes:> Screenshot upload request sent to your DMs for **[' + f.name + '](#features)**.';
+        }
+        return m;
       });
-      return out;
+    },
+    act: function (a) {
+      var parts = a.split(':');
+      if (parts[0] === 'exiva') { revealed[parts[1]] = true; return true; }
+      if (parts[0] === 'shot') { shot[parts[1]] = true; return true; }
+      return false;
     },
     empty: function () {
       return '<div class="dc-empty"><b>Nothing gets past your filters.</b><br>' +

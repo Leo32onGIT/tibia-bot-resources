@@ -234,6 +234,7 @@
 
 /* --------------------------------------------------------------- message */
 .msg { padding: 2px 12px 2px 50px; position: relative; margin-top: 13px; }
+.msg.join { margin-top: 2px; }
 .msg:hover { background: #2e3035; }
 .msg .av { position: absolute; left: 11px; top: 1px; width: 30px; height: 30px; border-radius: 50%; }
 .msg .hd { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; flex-wrap: wrap; }
