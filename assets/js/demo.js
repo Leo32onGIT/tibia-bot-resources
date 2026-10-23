@@ -40,7 +40,8 @@ var UNI = {
   pushpin:        ['1f4cc', '📌'],
   scissors:       ['2702',  '✂️'],
   camera:         ['1f4f7', '📷'],
-  no_bell:        ['1f515', '🔕']
+  no_bell:        ['1f515', '🔕'],
+  bar_chart:      ['1f4ca', '📊']
 };
 
 /* Custom server emoji, ids verbatim from
@@ -630,7 +631,10 @@ function buttonsHTML(row, inCard) {
 function v2HTML(list, ago) {
   return list.map(function (c) {
     if (c.t === 'row') return buttonsHTML(c.buttons);
-    if (c.t === 'card') return '<div class="v2">' + c.items.map(function (x) { return v2Item(x, ago); }).join('') + '</div>';
+    if (c.t === 'card') {
+      return '<div class="v2' + (c.accent ? ' accent" style="--edge:' + c.accent : '') + '">' +
+             c.items.map(function (x) { return v2Item(x, ago); }).join('') + '</div>';
+    }
     return v2Item(c, ago);
   }).join('');
 }
@@ -638,6 +642,10 @@ function v2Item(x, ago) {
   if (x.t === 'sep') return '<div class="v2-sep"></div>';
   if (x.t === 'gallery') return '<div class="v2-gal"><img src="' + x.src + '" alt="" data-fb=""></div>';
   if (x.t === 'row') return buttonsHTML(x.buttons, true);
+  if (x.t === 'select') {
+    return '<div class="v2-sel">' + (x.emoji ? custom(x.emoji) : '') + '<span>' + esc(x.label) + '</span>' +
+           '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg></div>';
+  }
   var text = '<div class="dc-md v2-td">' + md(x.md, ago) + '</div>';
   if (x.t === 'text') return text;
   var side = x.thumb ? '<img class="v2-th" src="' + x.thumb + '" alt="" data-fb="">'
@@ -1151,39 +1159,37 @@ Demos.online = (function () {
 })();
 
 /* ---------------------------------------------------------------------
-   #statistics — presentation/StatisticsEmbeds.scala + PvpEmbeds.scala
-   One daily post, not a feed: three embeds sent after server save.
+   #statistics — StatisticsEmbeds, PvpEmbeds and StatisticsCard. One post
+   after server save: three V2 cards, then the 📊 button.
    ------------------------------------------------------------------ */
 Demos.stats = (function () {
-  /* presentation/StatLines.who — vocation, linked name, side icon. */
+  var st = { panel: false };
+
+  /* StatLines.who — vocation, level, linked name, side icon. */
   function who(c) {
     var icon = sideIcon(c);
-    return vc(c.voc) + ' **[' + c.name + '](#features)**' + (icon ? ' ' + icon : '');
+    return vc(c.voc) + ' **' + c.level + '** — **[' + c.name + '](#features)**' + (icon ? ' ' + icon : '');
   }
-  /* presentation/StatLines.Dot */
-  var DOT = ' · ';
   function cells() {
-    return [].slice.call(arguments).filter(Boolean).join(DOT);
+    return [].slice.call(arguments).filter(Boolean).join(' · ');
   }
-  /* Two DIFFERENT icons. The board shows no sign on the figure — the
-     rising and falling icons are what say which direction it went, so
-     using levelup for both made every loss read as a gain. */
+  /* StatisticsCard.section: a bold capital label in subtext over its rows. */
+  function section(label, rows) {
+    return ['-# **' + label.toUpperCase() + '**'].concat(rows).join('\n');
+  }
+  function num(n) { return n.toLocaleString('en-US'); }
+  /* Two DIFFERENT icons: the board shows no sign, so the icon says which way. */
   var XP_UP = '<:levelup:>', XP_DOWN = '<:lvldown:>';
 
-  var day = (function () {
-    var d = new Date(Date.now() - 86400000);
-    return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  })();
+  /* The posting morning, as StatisticsEmbeds.heading dates it. */
+  var day = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).replace(',', '');
 
   /* Drawn from the shared roster, so a name here carries the same
-     vocation and the same side it carries in every other channel. */
+     vocation and side it carries in every other channel. Only characters
+     who could plausibly post these figures. */
   var board = (function () {
     var r = rng(77003);
     var used = {};
-    /* Only characters who could plausibly post these figures. A level-25
-       druid has under 20k experience to its name, so putting one at the
-       top of a 33-million-experience board is the kind of detail a Tibia
-       player spots instantly. */
     function take(minLevel) {
       var eligible = ROSTER.filter(function (c) {
         return !used[c.name] && c.level >= (minLevel || 0);
@@ -1198,8 +1204,6 @@ Demos.stats = (function () {
       gains.push({ c: take(300), xp: xp });
       xp = Math.round(xp * (0.82 + r() * 0.1));
     }
-    /* Experience lost is a death, so it has to be a fraction of what the
-       character actually holds rather than a number picked in a vacuum. */
     var lost = 11000000;
     for (var j = 0; j < 3; j++) {
       losses.push({ c: take(350), xp: lost });
@@ -1207,27 +1211,19 @@ Demos.stats = (function () {
     }
     return { gains: gains, losses: losses, skill: take(300),
              fraggers: [take(250), take(250), take(250)],
-             repeat: take(250), topKill: take(400) };
+             repeat: take(250), topKill: take(400), allyKill: take(300) };
   })();
 
-  /* The day's frags, as presentation/Bars reads them: each side's summed
-     victim levels and its body count, against what an ordinary character
-     on this world is worth and what a full bar costs. */
+  /* The day's frags as presentation/Bars reads them. */
   var FRAGS = {
     enemiesKilled: 14, enemyLevels: 5600,
     alliesKilled: 6,   allyLevels: 2100,
-    referenceLevel: 250,  /* the world's average level      */
-    ceiling: 110          /* Bars.ceilingFor(~1100 online)  */
+    referenceLevel: 250,
+    ceiling: 110
   };
 
-  /* presentation/Bars.split, ported.
-
-     Twelve segments. How much is coloured says how big the day was on a
-     log scale — a handful of frags is a real day and should look like
-     one, while forty versus fifty is worth almost nothing. Where the
-     colour changes says who won: green is enemies killed, red is allies.
-     Neither side vanishes while it has anything at all, because a bar
-     that reads as a clean sweep on a day somebody died is a lie. */
+  /* presentation/Bars.split: how much is coloured is the day's size on a
+     log scale; where the colour changes is who won. */
   function weigh(levels, deaths, reference) {
     return levels > 0 ? levels / Math.max(1, reference) : deaths;
   }
@@ -1251,84 +1247,80 @@ Demos.stats = (function () {
     return out;
   }
 
+  function gainLine(g, icon) { return cells(who(g.c), icon + ' **' + num(g.xp) + '**'); }
+
+  function card(colour, blocks) {
+    var items = [];
+    blocks.forEach(function (b, i) {
+      if (i) items.push({ t: 'sep' });
+      items.push({ t: 'text', md: b });
+    });
+    return { t: 'card', accent: colour, items: items };
+  }
+
+  /* StatisticsPanelCard for PanelView.First: today's experience, ranked. */
+  function panel() {
+    var rows = board.gains.map(function (g, i) { return '**' + (i + 1) + '.** ' + gainLine(g, XP_UP); });
+    return [{ t: 'card', accent: C.green, items: [
+      { t: 'text', md: '## 📊 [Top Experience · Today](#features)\n-# Experience gained over the day to the last server save, as the day\'s post has it.' },
+      { t: 'sep' },
+      { t: 'text', md: rows.join('\n') },
+      { t: 'sep' },
+      { t: 'select', emoji: 'levelup', label: 'Exp' },
+      { t: 'select', emoji: 'news', label: 'Today' }
+    ] }];
+  }
+
   function build() {
-    var lines = ['## <a:news:> [' + day + '](#features)', '### Top Experience Gained'];
-    board.gains.forEach(function (g) {
-      lines.push(cells(who(g.c), '*' + g.c.level + '*',
-                       XP_UP + ' **' + g.xp.toLocaleString('en-US') + '**'));
-    });
-    lines.push('### Top Experience Lost');
-    board.losses.forEach(function (g) {
-      lines.push(cells(who(g.c), '*' + g.c.level + '*',
-                       XP_DOWN + ' **' + g.xp.toLocaleString('en-US') + '**'));
-    });
-    lines.push('### Top Skill Advancement');
-    /* HighscoreCategory.advancement: "{label} level **{score}**",
-       led by SkillEmojis.icon for the category. */
-    lines.push(cells(who(board.skill), '*' + board.skill.level + '*',
-                     '<a:skillshield:> Shielding level **121**'));
+    var world = card(C.green, [
+      '## <a:news:> [' + day + '](#features)',
+      section('Top Experience Gained', board.gains.map(function (g) { return gainLine(g, XP_UP); })),
+      section('Top Experience Lost', board.losses.map(function (g) { return gainLine(g, XP_DOWN); })),
+      section('Top Skill Advancement', [cells(who(board.skill), '<a:skillshield:> Shielding level **121**')])
+    ]);
 
-    var pvp = [
-      '## :dagger: PVP',
-      bar(FRAGS),
-      '**' + FRAGS.enemiesKilled + '** enemies killed vs **' + FRAGS.alliesKilled + '** allies killed',
-      '### Most Kills'
-    ];
-    [5, 4, 3].forEach(function (n, i) {
-      pvp.push(cells(who(board.fraggers[i]), '**' + n + ' kills**'));
-    });
-    pvp.push('### Most Deaths');
-    pvp.push(cells(who(board.repeat), '*' + board.repeat.level + '*', '**3 deaths**'));
-    pvp.push('### Top Enemy Killed');
-    pvp.push(cells(who(board.topKill), '*' + board.topKill.level + '*', '[:link:](#features)'));
+    var pvp = card(C.red, [
+      ['## :dagger: PVP', bar(FRAGS),
+       '**' + FRAGS.enemiesKilled + '** enemies killed vs **' + FRAGS.alliesKilled + '** allies killed'].join('\n'),
+      section('Most Kills', [5, 4, 3].map(function (n, i) { return cells(who(board.fraggers[i]), '**' + n + ' kills**'); })),
+      section('Most Deaths', [cells(who(board.repeat), '**3 deaths**')]),
+      section('Top Enemy Killed', [who(board.topKill), '-# [view](#features)']),
+      section('Top Ally Killed', [who(board.allyKill), '-# [view](#features)'])
+    ]);
 
-    var creatures = [
-      '## <:creature:> Creature Kills',
-      '**184,207** [Flimsy Lost Souls](#features)',
-      '**91,442** [Cobra Assassins](#features)',
-      '**64,018** [Burster Spectres](#features)',
-      '**41,330** [Grim Reapers](#features)',
-      '## <:gold:> Special Kills',
-      /* statistics/SpecialKills.all, with StatisticsEmbeds.creatureStats'
-         row shape: the emoji leads, then the count, then the name.
-         `nameFor` switches to the plural only where the boss has a
-         different word for it — Phosphorus and Goshnar's Megalomania are
-         one named boss however many died, and the endpoint's spelling of
-         the plural really is "Patriarches". */
-      '<a:plunder:> **7** [Plunder Patriarches](#features)',
-      "<a:soulwar:> **2** [Goshnar's Megalomania](#features)",
-      '<a:bakragore:> **3** [Bakragores](#features)',
-      '<a:primal:> **1** [The Primal Menace](#features)'
-    ];
+    /* statistics/SpecialKills: the emoji leads, then the count, then the
+       name; `nameFor` is plural only where the boss has a plural. */
+    var kills = card(C.yellow, [
+      '## <:creature:> Kill Statistics',
+      section('Creatures', [
+        '**184,207** [Flimsy Lost Souls](#features)',
+        '**91,442** [Cobra Assassins](#features)',
+        '**64,018** [Burster Spectres](#features)',
+        '**41,330** [Grim Reapers](#features)'
+      ]),
+      section('Special Kills', [
+        '<a:plunder:> **7** [Plunder Patriarches](#features)',
+        "<a:soulwar:> **2** [Goshnar's Megalomania](#features)",
+        '<a:bakragore:> **3** [Bakragores](#features)',
+        '<a:primal:> **1** [The Primal Menace](#features)'
+      ])
+    ]);
 
-    /* presentation/BossPredictionEmbeds — which bosses history says could
-       be up today. A green dot is a high chance, yellow a maybe; the count
-       after a name is how many of that boss's spawn points are due, since
-       "two of four Rotworm Queens" is a different trip from one. */
-    var bosses = [
-      '## <:boss:> Bosses Due',
-      ':green_circle: <:nemesis:> **Ferumbras**' + DOT + 'window closes <t:172800:R>',
-      ':green_circle: <:nemesis:> **Zulazza the Corruptor**' + DOT + 'overdue since <t:-10800:R>',
-      ':yellow_circle: <:nemesis:> **Rotworm Queen** ×2' + DOT + 'opens <t:86400:R>',
-      ':yellow_circle: <:nemesis:> **Ghazbaran**' + DOT + 'opens <t:259200:R>'
-    ];
-
-    return [{
-      ago: 7400,
-      embeds: [
-        { color: C.green,  desc: lines.join('\n') },
-        { color: C.red,    desc: pvp.join('\n') },
-        { color: C.yellow, desc: creatures.join('\n') },
-        { color: C.purple, desc: bosses.join('\n'), footer: '3 boss(es) not yet predicted' }
-      ]
-    }];
+    var msg = { ago: 7400, v2: [world, pvp, kills, { t: 'row', buttons: [{ style: 'secondary', emoji: 'bar_chart', act: 'more' }] }] };
+    if (st.panel) msg.ephemeralV2 = panel();
+    return [msg];
   }
 
   return {
     ch: 'stats',
     fromTop: true,
     build: build,
-    tick: null
+    tick: null,
+    act: function (a) {
+      if (a !== 'more') return false;
+      st.panel = true;
+      return true;
+    }
   };
 })();
 
