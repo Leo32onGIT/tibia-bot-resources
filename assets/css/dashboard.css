@@ -31,66 +31,78 @@
 .db-masthead {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--panel-border); border-radius: 8px;
-  padding: 11px 15px; margin-bottom: 12px;
-  display: flex; align-items: center; gap: 13px; flex-wrap: wrap;
+  padding: 13px 18px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
 }
-.db-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.db-brand img { width: 34px; height: 34px; border-radius: 8px; flex: none; }
-.db-brand .server {
-  display: inline-flex; align-items: center; gap: 6px;
-  color: var(--text-strong); font-weight: 600; font-size: 14px;
+.db-brand {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  font-family: var(--mono); font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--text-strong);
 }
-.db-brand .server .ic { color: var(--muted); }
-.db-brand .path { color: var(--muted); font-weight: 400; }
-.db-brand .sub {
-  display: block; font-size: 10px; font-weight: 400; color: var(--muted);
-  letter-spacing: 0.04em; margin-top: 2px; font-family: var(--mono);
+.db-brand img { width: 32px; height: 32px; border-radius: 8px; flex: none; }
+.db-brand > span { display: inline-flex; flex-direction: column; align-items: center; min-width: 0; }
+.db-brand .scope {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; white-space: nowrap;
+  border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(255, 255, 255, 0.02);
 }
+.db-brand .scope .ic { font-size: 13px; color: var(--muted); }
+.db-brand .scope .chev { font-size: 11px; opacity: 0.7; }
+.db-brand .sub { font-size: 10px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; margin-top: 3px; }
 .db-tier {
-  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
-  letter-spacing: 0.08em; border-radius: 4px; padding: 2px 7px;
-  background: rgba(167, 139, 250, 0.16); color: var(--purple); flex: none;
+  display: inline-flex; align-items: center; gap: 4px; flex: none; height: 26px; padding: 0 8px; border-radius: 4px;
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  background: rgba(167, 139, 250, 0.15); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.45);
 }
-.db-filter {
-  margin-left: auto; flex: 0 1 240px; min-width: 0;
-  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--panel-border);
-  border-radius: 7px; padding: 7px 11px; color: var(--text);
-  font: inherit; font-size: 12px;
+.db-tier .ic { font-size: 13px; }
+.db-tier .chev { font-size: 11px; }
+.db-tabs {
+  margin-left: auto; display: inline-flex; gap: 4px; padding: 3px;
+  border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(255, 255, 255, 0.02);
 }
-.db-filter::placeholder { color: var(--muted); }
-.db-filter:focus { outline: none; border-color: var(--accent); }
+.db-tabs > span {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 6px;
+  font: 600 12.5px var(--mono); color: var(--muted);
+}
+.db-tabs > span.on { color: var(--text-strong); background: rgba(91, 140, 255, 0.14); box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.4); }
+.db-tabs .ic { font-size: 15px; }
 
 /* ------------------------------------------------- panels and titles */
 .db-panel {
-  border: 1px solid var(--panel-border); border-radius: 8px;
+  border: 1px solid var(--panel-border); border-radius: 10px;
   background: var(--panel); margin-bottom: 12px; overflow: hidden;
 }
 .db-panel-title {
-  padding: 11px 15px; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  padding: 12px 16px; font-family: var(--mono); font-size: 12px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted);
   border-bottom: 1px solid var(--panel-border);
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
-.db-panel-title::before { content: '##'; color: var(--accent); letter-spacing: normal; }
-
-/* Moderator tools: shut until asked for, and above the list because what
-   it does — adding a code — changes the list underneath it. */
-.db-fold {
-  width: 100%; display: flex; align-items: center; gap: 9px;
-  padding: 11px 15px; background: none; border: 0; color: var(--text-strong);
-  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
+.db-panel-title > .ic { font-size: 13px; color: var(--accent); }
+.db-panel-title .pt-end { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; margin-block: -6px; min-width: 0; }
+.db-sbox {
+  display: inline-flex; align-items: center; gap: 6px; width: 250px; padding: 3px 8px; min-width: 0;
+  background: rgba(255, 255, 255, 0.02); border: 1px solid var(--panel-border); border-radius: 6px; color: var(--muted);
+  text-transform: none; letter-spacing: normal; font-weight: 400;
 }
-.db-fold:hover { background: rgba(255, 255, 255, 0.02); }
-.db-fold .chev { margin-left: auto; color: var(--muted); font-size: 13px; transition: transform 0.15s ease; }
-.db-panel.open .db-fold .chev { transform: rotate(180deg); }
-.db-fold-body { display: none; padding: 0 15px 14px; }
-.db-panel.open .db-fold-body { display: block; }
-.db-fold-body p { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+.db-sbox:focus-within { border-color: var(--accent); }
+.db-sbox .ic { font-size: 13px; }
+.db-filter {
+  flex: 1; min-width: 40px; background: none; border: 0; outline: none; padding: 3px 0;
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+}
+.db-filter::placeholder { color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.db-views { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--panel-border); border-radius: 8px; background: rgba(255, 255, 255, 0.02); }
+.db-views button {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 24px; padding: 0;
+  border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; font-size: 14px;
+}
+.db-views button:hover { color: var(--text); }
+.db-views button[aria-pressed="true"] { color: var(--text-strong); background: rgba(91, 140, 255, 0.14); box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.4); }
+.db-views button:focus-visible, .db-card:focus-visible, .db-table tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ------------------------------------------------------------- cards */
 .db-cards {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
-  gap: 10px; padding: 13px 15px;
+  gap: 10px; padding: 14px 16px;
 }
 .db-card {
   position: relative; overflow: hidden; cursor: pointer; text-align: left;
@@ -98,21 +110,16 @@
   border-radius: 8px; padding: 10px 12px; font: inherit; color: inherit;
 }
 .db-card:hover { border-color: var(--accent); }
-/* State also shows as a hairline down the leading edge, because on a busy
-   watermark the dot alone gets lost against the art. */
 .db-card::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0;
   width: 2px; background: var(--edge, transparent);
 }
-/* 128px is exactly twice a sprite's own 64px canvas, so every source pixel
-   lands on a whole number of device pixels and the art stays hard-edged.
-   Bigger than the card on purpose: the card is a window onto the art
-   rather than a frame around it. Never mirrored — Tibia sprites face a
-   deliberate direction. */
-.db-card .sprite {
+/* Twice a sprite's 64px canvas, so the art stays hard-edged. */
+.db .sprite {
   position: absolute; right: -6px; top: 0; bottom: 0; margin: auto;
   width: 128px; height: 128px; opacity: 0.17; pointer-events: none;
   image-rendering: pixelated; object-fit: contain;
+  filter: grayscale(var(--drain, 0));
 }
 .db-card .body { position: relative; }
 .db-card .top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -123,8 +130,6 @@
   background: rgba(240, 178, 50, 0.13); border: 1px solid rgba(240, 178, 50, 0.32);
   border-radius: 5px; padding: 2px 7px; flex: none;
 }
-/* A spawn being hunted right now is the one thing on the board about to
-   change, so its code is the one thing that moves. */
 .db .code-chip.live { color: #ffd98a; border-color: rgba(240, 178, 50, 0.75); animation: db-pulse 2.6s ease-out infinite; }
 @keyframes db-pulse {
   0% { box-shadow: 0 0 0 0 rgba(240, 178, 50, 0.42); }
@@ -140,28 +145,21 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .db .card-state { display: flex; align-items: center; gap: 6px; font-size: 11.5px; }
-.db .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; border: 1.5px solid; }
-.db .dot.free { border-color: var(--st-free); background: var(--st-free); }
-.db .dot.claimed { border-color: var(--st-claimed); background: var(--st-claimed); }
-.db .dot.booked { border-color: var(--st-booked); background: transparent; }
-.db .dot.confirmed { border-color: var(--st-confirmed); background: var(--st-confirmed); }
-.db .dot.asked { border-color: var(--st-asked); background: var(--st-asked); }
+.db .dot { display: none; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.db .dot.free { display: block; background: var(--st-free); }
 .db .who {
   font-family: var(--mono); font-size: 11px; color: var(--muted);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  display: flex; align-items: center; gap: 4px; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
 }
 .db .who.free { color: var(--st-free); }
-/* A state line is mostly punctuation and clock times, and the one word in
-   it worth finding at a glance is the person — so it is the one word set
-   apart, by weight AND colour. At 11px monospace in the muted grey, bold
-   alone is a difference you have to be told about before you can see it. */
 .db .who .at-name {
   color: var(--claimant); background: rgba(var(--claimant-rgb), 0.12);
-  border-radius: 4px; padding: 1px 5px; font-weight: 700; flex: none;
+  border-radius: 4px; padding: 1px 5px; font-weight: 700;
 }
-.db .who .tick { color: var(--st-confirmed); font-size: 11px; flex: none; }
-.db .queue { font-family: var(--mono); font-size: 10px; color: var(--muted); flex: none; margin-left: auto; }
+.db .who .d-mark { width: 11px; height: 11px; flex: none; vertical-align: -1px; margin-right: 3px; fill: var(--claimant); }
+.db .who .tick { color: var(--st-confirmed); font-size: 11px; margin-right: 3px; vertical-align: -0.1em; }
+.db .queue { font-family: var(--mono); font-size: 10px; color: var(--muted); flex: none; }
+.db .card-state .queue { margin-left: auto; }
 
 .db .card-bar {
   height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.07);
@@ -172,7 +170,40 @@
   background: var(--st-claimed); transition: width 1s linear;
 }
 
-.db-empty { padding: 26px 16px; color: var(--muted); font-size: 13px; text-align: center; }
+.db-empty { padding: 26px 16px; color: var(--muted); font-size: 13px; text-align: center; grid-column: 1 / -1; }
+
+/* -------------------------------------------------------------- rows */
+.db-rows { display: none; overflow-x: auto; }
+.db-panel.view-rows .db-rows { display: block; }
+.db-panel.view-rows .db-cards { display: none; }
+.db-table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
+.db-table th {
+  text-align: left; font: 600 9.5px var(--mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
+  padding: 9px 12px; border-bottom: 1px solid var(--panel-border); white-space: nowrap;
+}
+.db-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); vertical-align: middle; }
+.db-table tr:last-child td { border-bottom: 0; }
+.db-table tr td:first-child { box-shadow: inset 2px 0 0 var(--edge, transparent); }
+.db-table tr[data-code] { cursor: pointer; }
+.db-table tr[data-code]:hover td { background: rgba(255, 255, 255, 0.025); }
+.db-table .scell { position: relative; overflow: hidden; width: 46%; }
+.db-table th.r { width: 64px; }
+.db-table th.ago { width: 92px; }
+.db-table .r { text-align: right; }
+.db-table .sline { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.db-table .rstate { display: flex; align-items: center; gap: 6px; font-size: 11.5px; min-width: 0; }
+.db-table .card-bar { width: 120px; max-width: 100%; margin-top: 5px; }
+.db-table .seen { font: 11.5px var(--mono); color: var(--muted); white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .db-masthead { display: grid; grid-template-columns: minmax(0, max-content) 1fr; gap: 12px 8px; padding: 12px; }
+  .db-tier { justify-self: center; opacity: 0.7; }
+  .db-tabs, .db-views { display: none; }
+  .db-panel-title .pt-end { flex-basis: 100%; margin: 4px 0 -2px; }
+  .db-sbox { width: 100%; }
+  .db-panel.view-rows .db-rows { display: none; }
+  .db-panel.view-rows .db-cards { display: grid; }
+}
 
 /* ------------------------------------------------- the spawn window */
 .db-veil {

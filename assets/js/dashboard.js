@@ -22,7 +22,7 @@ if (!D) return;
 var SpawnState = D.SpawnState, SPAWNS = D.SPAWNS;
 var creatureImg = D.creatureImg, clockTime = D.clockTime, esc = D.esc;
 
-var DOT = '·', ARROW = '→';
+var DOT = '·';
 
 /* The Discord mark, verbatim from board.html. A claimant is a Discord
    account rather than a Tibia character, and on a board where every other
@@ -31,29 +31,20 @@ var DOT = '·', ARROW = '→';
    name plate, where currentColor is the muted grey of the line. */
 var DISCORD_MARK = '<svg class="d-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>';
 
-var el = {}, filter = '', open = null, timer = null;
+var el = {}, filter = '', open = null, timer = null, view = 'cards';
 
-/* ---------------------------------------------------------------------
-   board.html's shownSpawns: what is happening now first, ordered by when
-   it stops happening; then what is about to happen, ordered by when it
-   starts; then everything else. The top of the board is for what is
-   changing, not for who was last to touch something.
-
-   Deliberately NOT the forum's order, which is claimed-first and then
-   catalogue order. The two surfaces answer different questions — the
-   forum is a list of posts, this is a board you scan.
-   ------------------------------------------------------------------ */
+/* board.js shownSpawns: hunted first by when it ends, then booked by when
+   it starts, then free by how recently anyone was on it. */
 function tier(row) {
   if (row.state === 'claimed') return 0;
   return row.state === 'free' ? 2 : 1;
 }
 
 function shown() {
-  var q = filter.toLowerCase();
+  var words = filter.toLowerCase().split(/\s+/).filter(Boolean);
   var list = SPAWNS.filter(function (s) {
-    if (!q) return true;
     var hay = (s.code + ' ' + s.name + ' ' + s.creature.replace(/_/g, ' ')).toLowerCase();
-    return hay.indexOf(q) > -1;
+    return words.every(function (w) { return hay.indexOf(w) > -1; });
   });
   return list.slice().sort(function (a, b) {
     var ra = SpawnState.get(a.code), rb = SpawnState.get(b.code);
@@ -61,13 +52,10 @@ function shown() {
     if (ta !== tb) return ta - tb;
     if (ta === 0) return ra.left - rb.left;
     if (ta === 1) return ra.start - rb.start;
-    return SPAWNS.indexOf(a) - SPAWNS.indexOf(b);
+    return (ra.idle == null ? Infinity : ra.idle) - (rb.idle == null ? Infinity : rb.idle);
   });
 }
 
-/* How long is left, at the coarseness worth reading it at — board.html's
-   fmtDur. "3hr9m left" and "in 3hr9m" are the same measurement seen from
-   two sides, so they are spelled the same way. */
 function fmtDur(mins) {
   if (mins < 1) return 'now';
   if (mins < 60) return mins + 'm';
@@ -75,41 +63,50 @@ function fmtDur(mins) {
   return h + 'hr' + (m ? m + 'm' : '');
 }
 
-/* Somebody as this page names them: the one Discord name they answer to,
-   written @name — the same shape the bot uses on the spawn card in the
-   thread. The @ is written here, so a name travels as a name and the
-   punctuation around it stays the page's business. */
+/* board.js FADE: a card dims and greys the longer nobody has been on it. */
+var FADE = [
+  { maxHours: 1,        opacity: 1.00, drain: 0.00 },
+  { maxHours: 24,       opacity: 0.88, drain: 0.15 },
+  { maxHours: 72,       opacity: 0.68, drain: 0.40 },
+  { maxHours: 168,      opacity: 0.50, drain: 0.65 },
+  { maxHours: 720,      opacity: 0.34, drain: 0.85 },
+  { maxHours: Infinity, opacity: 0.20, drain: 1.00 }
+];
+function fadeFor(row) {
+  if (row.state === 'claimed') return FADE[0];
+  var hours = row.idle == null ? Infinity : row.idle / 60;
+  for (var i = 0; i < FADE.length - 1; i++) if (hours < FADE[i].maxHours) return FADE[i];
+  return FADE[FADE.length - 1];
+}
+
 function atName(row) {
   return DISCORD_MARK + '<b class="at-name">@' + esc(row.who) + '</b>';
 }
 
-/* board.html's STATE_TEXT. A claim says how long is LEFT rather than when
-   it ends: what a board is read to answer is whether it is worth waiting,
-   and a clock time makes the reader do that subtraction themselves. */
+var TICK = '<svg class="ic tick" aria-hidden="true"><use href="#i-check"/></svg>';
+
+/* board.js STATE_TEXT. */
 function stateLine(row) {
   if (row.state === 'free') return 'free';
   if (row.state === 'claimed') {
     return atName(row) + ' ' + DOT + ' ' + fmtDur(Math.round(row.left / 60)) + ' left';
   }
-  if (row.state === 'booked') return atName(row) + ' booked ' + DOT + ' ' + clockTime(row.start);
-  if (row.state === 'confirmed') return atName(row) + ' confirmed ' + DOT + ' ' + clockTime(row.start);
-  return atName(row) + ' asked ' + DOT + ' ' + clockTime(row.start);
+  if (row.state === 'confirmed') return atName(row) + ' ' + TICK + 'confirmed ' + DOT + ' ' + clockTime(row.start);
+  return atName(row) + ' booked ' + DOT + ' ' + clockTime(row.start);
+}
+
+function barHTML(row) {
+  var done = Math.min(1, Math.max(0, 1 - row.left / Math.max(1, row.mins * 60)));
+  return '<div class="card-bar"><span style="width:' + (done * 100).toFixed(1) + '%"></span></div>';
 }
 
 function cardHTML(s) {
   var row = SpawnState.get(s.code);
   var live = row.state === 'claimed';
-  var done = live ? Math.min(1, Math.max(0, 1 - row.left / Math.max(1, row.mins * 60))) : 0;
-  var art = s.creature ? '<img class="sprite" src="' + creatureImg(s.creature) + '" alt="">' : '';
-  var tick = row.state === 'confirmed' ? '<svg class="ic tick" aria-hidden="true"><use href="#i-check"/></svg>' : '';
-  var queue = row.queue ? '<span class="queue">+' + row.queue + ' queued</span>' : '';
-  var bar = live
-    ? '<div class="card-bar"><span style="width:' + (done * 100).toFixed(1) + '%"></span></div>'
-    : '';
-
-  return '<button class="db-card" type="button" data-code="' + s.code +
-           '" style="--edge: var(--st-' + row.state + ')">' +
-           art +
+  var fade = fadeFor(row);
+  return '<button class="db-card" type="button" data-code="' + s.code + '" title="' + esc(s.code + ' — ' + s.name + ' · ' + s.region) +
+           '" style="opacity:' + fade.opacity + ';--drain:' + fade.drain + ';--edge:var(--st-' + row.state + ')">' +
+           '<img class="sprite" src="' + creatureImg(s.creature) + '" alt="">' +
            '<div class="body">' +
              '<div class="top">' +
                '<span class="code-chip' + (live ? ' live' : '') + '">' + esc(s.code) + '</span>' +
@@ -118,20 +115,42 @@ function cardHTML(s) {
              '<div class="card-state">' +
                '<span class="dot ' + row.state + '"></span>' +
                '<span class="who' + (row.state === 'free' ? ' free' : '') + '">' + stateLine(row) + '</span>' +
-               tick + queue +
+               '<span class="queue">' + (row.queue ? '+' + row.queue + ' queued' : '') + '</span>' +
              '</div>' +
-             bar +
+             (live ? barHTML(row) : '') +
            '</div>' +
          '</button>';
 }
 
+function agoText(row) {
+  if (row.state === 'claimed') return 'now';
+  if (row.idle == null) return '—';
+  var m = row.idle;
+  return m < 60 ? m + 'm ago' : m < 2880 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago';
+}
+
+function rowHTML(s) {
+  var row = SpawnState.get(s.code);
+  var live = row.state === 'claimed';
+  var fade = fadeFor(row);
+  return '<tr tabindex="0" data-code="' + s.code + '" style="opacity:' + fade.opacity + ';--drain:' + fade.drain + ';--edge:var(--st-' + row.state + ')">' +
+           '<td class="scell"><img class="sprite" src="' + creatureImg(s.creature) + '" alt="">' +
+             '<div class="sline"><span class="code-chip' + (live ? ' live' : '') + '">' + esc(s.code) + '</span>' +
+             '<span class="spawn-name">' + esc(s.name) + '</span></div></td>' +
+           '<td><div class="rstate"><span class="dot ' + row.state + '"></span>' +
+             '<span class="who' + (row.state === 'free' ? ' free' : '') + '">' + stateLine(row) + '</span></div>' +
+             (live ? barHTML(row) : '') + '</td>' +
+           '<td class="r"><span class="queue">' + (row.queue ? '+' + row.queue : '') + '</span></td>' +
+           '<td class="ago"><span class="seen">' + agoText(row) + '</span></td>' +
+         '</tr>';
+}
+
 function render() {
   var list = shown();
-  el.cards.innerHTML = list.length
-    ? list.map(cardHTML).join('')
-    : '<div class="db-empty">No spawn here matches <b>' + esc(filter) + '</b>.</div>';
-  el.sub.textContent = SpawnState.freeCount() + ' of ' + SPAWNS.length + ' free ' +
-                       DOT + ' 328 in the catalogue';
+  var none = 'No spawns match that filter.';
+  el.cards.innerHTML = list.length ? list.map(cardHTML).join('') : '<div class="db-empty">' + none + '</div>';
+  el.rows.innerHTML = list.length ? list.map(rowHTML).join('') : '<tr><td class="db-empty" colspan="4">' + none + '</td></tr>';
+  el.sub.textContent = SPAWNS.length + ' spawns';
   if (open) renderWindow();
 }
 
@@ -564,6 +583,8 @@ function setLive(on) {
 function init() {
   el.cards = document.getElementById('db-cards');
   if (!el.cards) return;
+  el.rows = document.getElementById('db-rows');
+  el.panel = document.getElementById('db-panel');
   el.sub = document.getElementById('db-sub');
   el.veil = document.getElementById('db-veil');
   el.window = document.getElementById('db-window');
@@ -577,6 +598,23 @@ function init() {
   el.cards.addEventListener('click', function (ev) {
     var card = ev.target.closest('.db-card');
     if (card) openWindow(card.dataset.code);
+  });
+  el.rows.addEventListener('click', function (ev) {
+    var tr = ev.target.closest('tr[data-code]');
+    if (tr) openWindow(tr.dataset.code);
+  });
+  el.rows.addEventListener('keydown', function (ev) {
+    var tr = ev.target.closest('tr[data-code]');
+    if (tr && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); openWindow(tr.dataset.code); }
+  });
+  el.panel.querySelectorAll('[data-view]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      view = b.dataset.view;
+      el.panel.classList.toggle('view-rows', view === 'rows');
+      el.panel.querySelectorAll('[data-view]').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x.dataset.view === view));
+      });
+    });
   });
 
   document.getElementById('db-filter').addEventListener('input', function (ev) {

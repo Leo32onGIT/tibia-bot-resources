@@ -358,7 +358,8 @@ var MEMBERS = [
      claimed    being hunted NOW — the only state the forum tags Claimed
      booked     a slot reserved for later
      confirmed  that booking settled
-     asked      a handover offered, waiting on an answer
+
+   idle is minutes since anyone was last on it, which the dashboard fades by.
    ------------------------------------------------------------------ */
 var SpawnState = (function () {
   var rows = {};
@@ -386,11 +387,12 @@ var SpawnState = (function () {
        than a page of green and pink. Strided over MEMBERS, because a
        uniform pick kept handing consecutive spawns to one person. */
     var plan = ['claimed', 'booked', 'free', 'claimed', 'confirmed', 'free',
-                'asked', 'claimed', 'booked', 'free', 'confirmed', 'claimed'];
+                'booked', 'claimed', 'booked', 'free', 'confirmed', 'claimed'];
+    var freeIdle = [35, 1900, 26000], bookedIdle = [180, 900, 3200, 7000, 400];
 
     SPAWNS.forEach(function (s, i) {
       var state = plan[i % plan.length];
-      if (state === 'free') { rows[s.code] = { state: 'free' }; return; }
+      if (state === 'free') { rows[s.code] = { state: 'free', idle: freeIdle.shift() }; return; }
 
       var mins = pick(r, [120, 180, 240]);
       var start, left;
@@ -404,7 +406,7 @@ var SpawnState = (function () {
         /* Ahead of now — between three quarters of an hour and ten hours,
            which is tonight for most readers and tomorrow morning for the
            rest. */
-        start = nowMin + between(r, 45, 600);
+        start = Math.ceil((nowMin + between(r, 45, 600)) / 30) * 30;
         left = 0;
       }
 
@@ -413,7 +415,8 @@ var SpawnState = (function () {
         who: MEMBERS[(i * 5 + 1) % MEMBERS.length],
         mine: false,
         start: start, mins: mins, left: left,
-        queue: state === 'claimed' && r() < 0.4 ? between(r, 1, 3) : 0
+        queue: state === 'claimed' && r() < 0.4 ? between(r, 1, 3) : 0,
+        idle: state === 'claimed' ? 0 : bookedIdle.shift()
       };
     });
   })();
@@ -430,11 +433,11 @@ var SpawnState = (function () {
       rows[code] = {
         state: 'claimed', who: 'you', mine: true,
         start: now.getHours() * 60 + now.getMinutes(),
-        mins: 180, left: 180 * 60, queue: 0
+        mins: 180, left: 180 * 60, queue: 0, idle: 0
       };
       changed();
     },
-    release: function (code) { rows[code] = { state: 'free' }; changed(); },
+    release: function (code) { rows[code] = { state: 'free', idle: 0 }; changed(); },
     subscribe: function (fn) { listeners.push(fn); },
     freeCount: function () {
       var n = 0, self = this;
