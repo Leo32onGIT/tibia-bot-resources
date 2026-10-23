@@ -71,6 +71,17 @@ header .wrap { display: flex; align-items: center; gap: 14px; height: 52px; }
 header .spacer { flex: 1; }
 header a.icon { color: var(--muted); font-size: 16px; }
 header a.icon:hover { color: var(--text-strong); }
+.hdr-sep { width: 1px; height: 18px; background: var(--panel-border); }
+.hdr-dash {
+  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px 0 11px;
+  border-radius: 7px; border: 1px solid rgba(91,140,255,0.38); background: rgba(91,140,255,0.1);
+  color: var(--text-strong); font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+.hdr-dash > .ic { color: var(--accent); }
+.hdr-dash .go { color: var(--muted); transition: transform 0.15s ease, color 0.15s ease; }
+.hdr-dash:hover { text-decoration: none; background: rgba(91,140,255,0.18); border-color: rgba(91,140,255,0.6); }
+.hdr-dash:hover .go { color: var(--text-strong); transform: translateX(2px); }
+@media (prefers-reduced-motion: reduce) { .hdr-dash .go { transition: none; } }
 
 /* ---- Hero ---- */
 .hero { padding: 76px 0 46px; text-align: center; }
@@ -148,8 +159,13 @@ footer img { width: 100px; opacity: 0.5; display: block; margin: 0 auto 10px; }
 
 @media (max-width: 620px) {
   .cline { grid-template-columns: 1fr; gap: 3px; }
+  header .wrap { gap: 12px; }
+  header a.nav, .hdr-sep { display: none; }
   .hero { padding: 52px 0 34px; }
   .hero h1 { gap: 12px; }
   .hero h1 img { width: 48px; height: 48px; border-radius: 11px; }
   .rule { margin: 50px 0 22px; }
+}
+@media (max-width: 360px) {
+  header a.in-hero { display: none; }
 }

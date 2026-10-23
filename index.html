@@ -18,8 +18,8 @@
 <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body>
-<!-- Tabler Icons (MIT), vendored. Only the thirteen this page draws,
-     as symbols rather than a webfont: a font for thirteen glyphs was a
+<!-- Tabler Icons (MIT), vendored. Only the fourteen this page draws,
+     as symbols rather than a webfont: a font for fourteen glyphs was a
      third-party request on every load for an unpinned @latest that could
      change under us, and its .ti rules once collided with our own class
      of that name and rendered every embed title in the icon font. -->
@@ -39,6 +39,7 @@
   <symbol id="i-terminal-2" viewBox="0 0 24 24"><path d="M8 9l3 3l-3 3" /> <path d="M13 15l3 0" /> <path d="M3 4m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" /></symbol>
   <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9z" /> <path d="M5 21v-7" /></symbol>
   <symbol id="i-door-exit" viewBox="0 0 24 24"><path d="M13 12v.01" /> <path d="M3 21h18" /> <path d="M5 21v-16a2 2 0 0 1 2 -2h7.5m2.5 10.5v7.5" /> <path d="M14 7h7m-3 -3l3 3l-3 3" /></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /></symbol>
   <symbol id="i-calendar-plus" viewBox="0 0 24 24"><path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" /> <path d="M16 3v4" /> <path d="M8 3v4" /> <path d="M4 11h16" /> <path d="M16 19h6" /> <path d="M19 16v6" /></symbol>
 </svg>
 
@@ -46,12 +47,13 @@
   <div class="wrap">
     <a class="brand" href="#top">violentbot<span class="slash">.xyz</span></a>
     <span class="spacer"></span>
-    <a class="icon" href="#features" title="Features" aria-label="Features"><svg class="ic" aria-hidden="true"><use href="#i-layout-list"/></svg></a>
-    <a class="icon" href="#dashboard" title="Dashboard" aria-label="Dashboard"><svg class="ic" aria-hidden="true"><use href="#i-layout-dashboard"/></svg></a>
-    <a class="icon" href="#commands" title="Commands" aria-label="Commands"><svg class="ic" aria-hidden="true"><use href="#i-terminal-2"/></svg></a>
-    <a class="icon" href="https://github.com/Leo32onGIT/tibia-bot" title="GitHub" aria-label="GitHub"><svg class="ic" aria-hidden="true"><use href="#i-brand-github"/></svg></a>
+    <a class="icon nav" href="#features" title="Features" aria-label="Features"><svg class="ic" aria-hidden="true"><use href="#i-layout-list"/></svg></a>
+    <a class="icon nav" href="#commands" title="Commands" aria-label="Commands"><svg class="ic" aria-hidden="true"><use href="#i-terminal-2"/></svg></a>
+    <a class="icon in-hero" href="https://github.com/Leo32onGIT/tibia-bot" title="GitHub" aria-label="GitHub"><svg class="ic" aria-hidden="true"><use href="#i-brand-github"/></svg></a>
     <a class="icon" href="https://discord.gg/SWMq9Pz8ud" title="Discord" aria-label="Community Discord"><svg class="ic" aria-hidden="true"><use href="#i-brand-discord"/></svg></a>
-    <a class="icon" href="https://patreon.com/violentbot" title="Patreon" aria-label="Patreon"><svg class="ic" aria-hidden="true"><use href="#i-brand-patreon"/></svg></a>
+    <a class="icon in-hero" href="https://patreon.com/violentbot" title="Patreon" aria-label="Patreon"><svg class="ic" aria-hidden="true"><use href="#i-brand-patreon"/></svg></a>
+    <span class="hdr-sep" aria-hidden="true"></span>
+    <a class="hdr-dash" href="/dashboard"><svg class="ic" aria-hidden="true"><use href="#i-layout-dashboard"/></svg>Dashboard<svg class="ic go" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
   </div>
 </header>
 
