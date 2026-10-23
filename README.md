@@ -20,6 +20,8 @@ assets/
   img/                  avatar, favicon, the Tibia mark
     demo/               fixtures for the demos only
       creatures/        creature sprites
+      effects/          death thumbnails, copied from discord/effects/
+      events/           activity thumbnails, copied from discord/events/
       emoji/            the bot's own custom Discord emoji
       twemoji/          Twemoji, for the unicode ones (CC-BY 4.0)
 discord/                artwork the bot links to from its embeds

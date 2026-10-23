@@ -300,17 +300,18 @@ var BOSSES = [
 ];
 
 /* Environmental damage types, keyed exactly as presentation/DeathEffect
-   keys them — and every one of these GIFs is already in this repo. */
+   keys them. Copies of discord/effects/, which the page never links. */
+var FX = 'assets/img/demo/effects/';
 var EFFECTS = [
-  { n: 'fire',       f: 'Fire.gif' },
-  { n: 'energy',     f: 'Red_Sparkles_Effect.gif' },
-  { n: 'drowning',   f: 'Reaper_Effect.gif' },
-  { n: 'ice',        f: 'Ice_Explosion_Effect.gif' },
-  { n: 'life drain', f: 'Red_Sparkles_Effect.gif' },
-  { n: 'death',      f: 'Death_Effect.gif' }
+  { n: 'fire',       f: FX + 'Fire.gif' },
+  { n: 'energy',     f: FX + 'Red_Sparkles_Effect.gif' },
+  { n: 'drowning',   f: FX + 'Reaper_Effect.gif' },
+  { n: 'ice',        f: FX + 'Ice_Explosion_Effect.gif' },
+  { n: 'life drain', f: FX + 'Red_Sparkles_Effect.gif' },
+  { n: 'death',      f: FX + 'Death_Effect.gif' }
 ];
-var PVP_GIF = 'Phantasmal_Ooze.gif';
-var SUICIDE_GIF = 'Ghost_Smoke_Effect.gif';
+var PVP_GIF = FX + 'Phantasmal_Ooze.gif';
+var SUICIDE_GIF = FX + 'Ghost_Smoke_Effect.gif';
 
 function creatureImg(f) { return 'assets/img/demo/creatures/' + f + '.gif'; }
 
@@ -909,12 +910,13 @@ Demos.activity = (function () {
   var st = { kinds: { join: 1, leave: 1, swap: 1, rename: 1, transfer: 1 } };
   var pool = [], cursor = 0;
 
+  var EV = 'assets/img/demo/events/';
   var THUMB = {
-    join:     { ally: 'guildjoingreen.png',  enemy: 'guildjoinred.png',  neutral: 'guildjoingrey.png' },
-    swap:     { ally: 'guildswapgreen.png',  enemy: 'guildswapred.png',  neutral: 'guildswapgrey.png' },
-    leave:    { ally: 'guildleaveyellow.png', enemy: 'guildleaveyellow.png', neutral: 'guildleaveyellow.png' },
-    rename:   { ally: 'namechange.png',      enemy: 'namechange.png',    neutral: 'namechange.png' },
-    transfer: { ally: 'worldtransfergreen.png', enemy: 'worldtransferred.png', neutral: 'worldtransfergrey.png' }
+    join:     { ally: EV + 'guildjoingreen.png',  enemy: EV + 'guildjoinred.png',  neutral: EV + 'guildjoingrey.png' },
+    swap:     { ally: EV + 'guildswapgreen.png',  enemy: EV + 'guildswapred.png',  neutral: EV + 'guildswapgrey.png' },
+    leave:    { ally: EV + 'guildleaveyellow.png', enemy: EV + 'guildleaveyellow.png', neutral: EV + 'guildleaveyellow.png' },
+    rename:   { ally: EV + 'namechange.png',      enemy: EV + 'namechange.png',    neutral: EV + 'namechange.png' },
+    transfer: { ally: EV + 'worldtransfergreen.png', enemy: EV + 'worldtransferred.png', neutral: EV + 'worldtransfergrey.png' }
   };
   /* Rename targets. Deliberately outside ROSTER: renaming onto a name
      another character already holds would show two of the same person
@@ -1316,7 +1318,7 @@ Demos.notify = (function () {
           desc: ROLES.map(function (r) {
             return '<:' + r.emoji + ':>@' + r.name + '@ ' + r.line;
           }).join('\n'),
-          thumb: 'Phantasmal_Ooze.gif',
+          thumb: PVP_GIF,
           footer: 'Use the buttons below to set these up:'
         }],
         buttons: ROLES.map(function (r) {
