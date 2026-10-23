@@ -38,6 +38,7 @@ var UNI = {
   calendar:       ['1f4c5', '📅'],
   globe:          ['1f310', '🌐'],
   pushpin:        ['1f4cc', '📌'],
+  next_track:     ['23ed', '⏭️'],
   scissors:       ['2702',  '✂️'],
   camera:         ['1f4f7', '📷'],
   no_bell:        ['1f515', '🔕'],
@@ -640,7 +641,7 @@ function v2HTML(list, ago) {
 }
 function v2Item(x, ago) {
   if (x.t === 'sep') return '<div class="v2-sep"></div>';
-  if (x.t === 'gallery') return '<div class="v2-gal"><img src="' + x.src + '" alt="" data-fb=""></div>';
+  if (x.t === 'gallery') return '<div class="v2-gal' + (x.sprite ? ' sprite' : '') + '"><img src="' + x.src + '" alt="" data-fb=""></div>';
   if (x.t === 'row') return buttonsHTML(x.buttons, true);
   if (x.t === 'select') {
     return '<div class="v2-sel">' + (x.emoji ? custom(x.emoji) : '') + '<span>' + esc(x.label) + '</span>' +
@@ -1556,32 +1557,63 @@ Demos.log = (function () {
 Demos.spawns = (function () {
   var st = { filter: 'all', open: null };
 
-  /* The pinned board post, from respawn/RespawnThreads.postBoard: one
-     forum thread called "Respawn Claims", pinned, carrying the intro and
-     the four ways into the system. It is what makes the feature usable
-     before any spawn has a post of its own — a spawn nobody has claimed
-     yet has no card to put a Claim button on, so the board carries one.
-
-     The PNG under it is the real code table, rendered from the seed
-     catalogue (tibia-bot/src/main/resources/respawns.json) through a port
-     of presentation/RespawnBoardImage: same grouping, same four balanced
-     columns, same colours, same bundled Lato for the names. A server that
-     has curated its own catalogue sees its own; this is what ships. */
-  var BOARD = {
-    title: ':calendar: Respawn Claims',
-    intro: '<:daily:> **Claim** **·** and type a code to claim a spawn right now\n' +
-           ':calendar: **Book** **·** to schedule/lock-in a hunt in the future (up to 12h)\n' +
-           ':globe: **Dashboard** **·** if you want to book further in advance (webui)\n' +
-           ':gear: **Config** **·** to change your default claim time & reminder settings',
-    buttons: [
-      { style: 'success', label: 'Claim', emoji: 'daily' },
+  /* RespawnThreads.boardComponents: the pinned "Respawn Claims" post. A
+     spawn nobody has claimed yet has no card to put a Claim button on, so
+     the board carries one. The PNG is the real code table, rendered from
+     the seed catalogue through a port of presentation/RespawnBoardImage.
+     Its links go to the dashboard demo below rather than the real one. */
+  var BOARD = [
+    { t: 'card', accent: C.purple, items: [
+      { t: 'sec', md: '### [Respawn Claims](#dashboard)\n-# Type a code to claim a spawn right now',
+        button: { style: 'success', label: 'Claim', emoji: 'daily' } },
+      { t: 'gallery', src: 'assets/img/demo/respawn-codes.png' }
+    ] },
+    { t: 'row', buttons: [
       { style: 'secondary', label: 'Book', emoji: 'calendar' },
-      /* The one component here that has a real destination on this page:
-         the section below is the dashboard it opens. */
       { style: 'secondary', label: 'Dashboard', emoji: 'globe', href: '#dashboard' },
       { style: 'secondary', label: 'Config', emoji: 'gear' }
-    ]
-  };
+    ] }
+  ];
+
+  function label(text) { return '-# **' + text.toUpperCase() + '**'; }
+
+  function duration(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h && m ? h + 'h ' + m + 'm' : h ? h + 'h' : m + 'm';
+  }
+
+  /* RespawnEmbeds.claimCard: who holds it with Next beside them, the
+     hunt's times with Leave, the queue, what is booked, then the creature. */
+  function claimCard(s, c, booked) {
+    var parts = [];
+    if (c) {
+      parts.push({ t: 'sec', md: label('Claimed by') + '\n' + c.who,
+                   button: { style: 'primary', label: 'Next', emoji: 'next_track' } });
+      parts.push({ t: 'sec', md: '-# **' + clockTime(c.start) + ' – ' + clockTime(c.start + c.mins) + '** · ends <t:' + c.left + ':R>\n-# ' + s.region,
+                   button: { style: 'danger', label: 'Leave', act: 'leave-' + s.code } });
+      if (c.queue) {
+        var queued = [];
+        for (var q = 0; q < c.queue; q++) queued.push('`' + (q + 1) + '.` ' + MEMBERS[(q * 7 + 3) % MEMBERS.length] + ' — ' + duration(120));
+        parts.push({ t: 'sep' }, { t: 'text', md: label('Queue · ' + c.queue + ' of 3') + '\n' + queued.join('\n') });
+      }
+    } else {
+      parts.push({ t: 'sec', md: '### <:yes:> Free\n-# ' + s.region,
+                   button: { style: 'success', label: 'Claim', emoji: 'daily', act: 'claim-' + s.code } });
+    }
+    if (booked) {
+      var ahead = (booked.start - (new Date().getHours() * 60 + new Date().getMinutes())) * 60;
+      parts.push({ t: 'sep' }, { t: 'text', md: label('Booked') + '\n▹ ' + clockTime(booked.start) +
+        ' **(<t:' + ahead + ':R>)** **·** ' + duration(booked.mins) + ' **·** ' + booked.who });
+    }
+    parts.push({ t: 'gallery', src: creatureImg(s.creature), sprite: true });
+    return [
+      { t: 'card', accent: c ? C.red : C.free, items: parts },
+      { t: 'row', buttons: [
+        { style: 'secondary', label: 'Bookings', emoji: 'calendar' },
+        { style: 'secondary', label: 'Config', emoji: 'gear' }
+      ] }
+    ];
+  }
 
   return {
     ch: 'spawns',
@@ -1618,18 +1650,11 @@ Demos.spawns = (function () {
       var board = '<div class="fr-post pinned" data-spawn="board" aria-expanded="' + boardOpen + '">' +
         '<div>' +
           '<span class="pin">' + uni('pushpin') + ' Pinned</span>' +
-          '<div class="pt">' + md(BOARD.title, 0) + '</div>' +
+          '<div class="pt">' + md(':calendar: Respawn Claims', 0) + '</div>' +
           '<div class="pm">Violent Bot · every respawn code is on this post</div>' +
         '</div>' +
         '<img class="pic" src="assets/img/avatar.png" alt="" data-fb="">' +
-        (boardOpen
-          ? '<div class="fr-open">' +
-              embedHTML({ color: C.purple, title: 'Respawn Claims', desc: BOARD.intro,
-                          thumb: 'assets/img/avatar.png',
-                          image: 'assets/img/demo/respawn-codes.png' }, 0) +
-              buttonsHTML(BOARD.buttons) +
-            '</div>'
-          : '') +
+        (boardOpen ? '<div class="fr-open">' + v2HTML(BOARD, 0) + '</div>' : '') +
         '</div>';
 
       var list = shown.map(function (s) {
@@ -1651,43 +1676,7 @@ Demos.spawns = (function () {
           '</div>' +
           '<img class="pic" src="' + creatureImg(s.creature) + '" alt="" data-fb="">';
 
-        if (open) {
-          /* RespawnEmbeds.claimCard, and RespawnThreads.claimRow for the buttons */
-          var card = {
-            color: c ? C.red : C.free,
-            title: s.code + ' — ' + s.name,
-            plain: true,
-            desc: c ? 'This respawn is currently being used by **' + c.who + '**.'
-                    : 'This respawn is **free**.',
-            footer: s.region
-          };
-          if (c) {
-            card.fields = [
-              { n: 'Hunt start', v: clockTime(c.start), inline: true },
-              { n: 'Hunt end', v: clockTime(c.start + c.mins), inline: true },
-              { n: 'Time left', v: '<t:' + c.left + ':R>', inline: true }
-            ];
-          } else if (booked) {
-            /* RespawnEmbeds.claimCard shows booked windows whether or not
-               the spawn is free this minute — the point of booking ahead
-               is that people can plan around it, and the forum's two tags
-               cannot say it any other way. */
-            card.fields = [{ n: 'Booked', v: '`1.` **' + booked.who + '** — ' +
-                             clockTime(booked.start) + ' → ' + clockTime(booked.start + booked.mins),
-                             inline: false }];
-          }
-          h += '<div class="fr-open">' + embedHTML(card, 0) + buttonsHTML(
-            c ? [
-              { style: 'primary', label: 'Next', emoji: 'zap' },
-              { style: 'secondary', label: 'Bookings' },
-              { style: 'secondary', label: 'Config' },
-              { style: 'danger', label: 'Leave', act: 'leave-' + s.code }
-            ] : [
-              { style: 'success', label: 'Claim', emoji: 'daily', act: 'claim-' + s.code },
-              { style: 'secondary', label: 'Bookings' },
-              { style: 'secondary', label: 'Config' }
-            ]) + '</div>';
-        }
+        if (open) h += '<div class="fr-open">' + v2HTML(claimCard(s, c, booked), 0) + '</div>';
         return h + '</div>';
       }).join('');
 

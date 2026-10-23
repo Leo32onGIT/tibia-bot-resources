@@ -407,7 +407,8 @@
 }
 .v2-sel span { flex: 1; }
 .v2-sel svg { width: 18px; height: 18px; fill: var(--dc-muted); }
-.v2-gal img { display: block; width: 100%; border-radius: 6px; }
+.v2-gal img { display: block; width: auto; max-width: 100%; max-height: 360px; border-radius: 6px; }
+.v2-gal.sprite img { width: auto; max-width: 100%; border-radius: 0; image-rendering: pixelated; }
 .dc-row.in-card { margin-top: 0; }
 .v2-eph { padding: 0; border-left: 0; background: none; }
 .v2-eph .tag { padding-left: 2px; }
